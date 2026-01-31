@@ -54,6 +54,9 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
   final void Function(String query)? onSearchChanged;
   final VoidCallback? onRefresh;
 
+  /// Called when selection changes (multi-select mode)
+  final void Function(Set<T> selectedItems)? onSelectionChanged;
+
   /// Widget to display below search field (for filters, chips, etc)
   final Widget? belowSearchWidget;
 
@@ -63,6 +66,19 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
   /// Performance options
   final bool cacheResults;
   final int maxCacheSize;
+
+  /// Multi-select configuration. When non-null, multi-select mode is enabled.
+  final SelectionConfiguration? selectionConfig;
+
+  /// Groups items by the returned value. When non-null, items are displayed
+  /// in sections with headers.
+  final Object Function(T item)? groupBy;
+
+  /// Builder for group section headers. If null, [DefaultGroupHeader] is used.
+  final GroupHeaderBuilder? groupHeaderBuilder;
+
+  /// Comparator for ordering groups. If null, groups appear in insertion order.
+  final Comparator<Object>? groupComparator;
 
   const SmartSearchList({
     super.key,
@@ -89,6 +105,11 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
     this.scrollController,
     this.cacheResults = true,
     this.maxCacheSize = 100,
+    this.selectionConfig,
+    this.onSelectionChanged,
+    this.groupBy,
+    this.groupHeaderBuilder,
+    this.groupComparator,
   }) : assert(
           controller != null ||
               ((items != null && asyncLoader == null) ||
@@ -177,8 +198,16 @@ class _SmartSearchListState<T extends Object>
     if (_isDisposed) return;
 
     final query = _searchTextController.text;
-    _controller.search(query);
+    // In onSubmit mode, don't trigger search on text change
+    if (widget.searchConfig.triggerMode != SearchTriggerMode.onSubmit) {
+      _controller.search(query);
+    }
     widget.onSearchChanged?.call(query);
+  }
+
+  void _onSearchSubmitted(String query) {
+    if (_isDisposed) return;
+    _controller.searchImmediate(query);
   }
 
   void _onScroll() {
@@ -285,6 +314,9 @@ class _SmartSearchListState<T extends Object>
       focusNode: _focusNode,
       configuration: widget.searchConfig,
       onClear: _clearSearch,
+      onSubmitted: widget.searchConfig.triggerMode == SearchTriggerMode.onSubmit
+          ? _onSearchSubmitted
+          : null,
     );
   }
 
@@ -363,13 +395,19 @@ class _SmartSearchListState<T extends Object>
   }
 
   Widget _buildListView() {
-    final itemCount = _controller.isLoadingMore
-        ? _controller.items.length + 1
-        : _controller.items.length;
-
     // Compute search terms once for all items
     final searchTerms =
         _controller.searchQuery.split(' ').where((s) => s.isNotEmpty).toList();
+
+    // Grouped rendering
+    if (widget.groupBy != null) {
+      return _buildGroupedListView(searchTerms);
+    }
+
+    // Flat list rendering (original behavior)
+    final itemCount = _controller.isLoadingMore
+        ? _controller.items.length + 1
+        : _controller.items.length;
 
     Widget listView;
 
@@ -414,6 +452,83 @@ class _SmartSearchListState<T extends Object>
     return listView;
   }
 
+  Widget _buildGroupedListView(List<String> searchTerms) {
+    final items = _controller.items;
+    final groupBy = widget.groupBy!;
+
+    // Build grouped data preserving order
+    final groupOrder = <Object>[];
+    final groupMap = <Object, List<_IndexedItem<T>>>{};
+
+    for (var i = 0; i < items.length; i++) {
+      final key = groupBy(items[i]);
+      if (!groupMap.containsKey(key)) {
+        groupOrder.add(key);
+        groupMap[key] = [];
+      }
+      groupMap[key]!.add(_IndexedItem(items[i], i));
+    }
+
+    // Sort groups if comparator provided
+    if (widget.groupComparator != null) {
+      groupOrder.sort(widget.groupComparator!);
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      physics: widget.listConfig.physics,
+      padding: widget.listConfig.padding,
+      shrinkWrap: widget.listConfig.shrinkWrap,
+      reverse: widget.listConfig.reverse,
+      scrollDirection: widget.listConfig.scrollDirection,
+      cacheExtent: widget.listConfig.cacheExtent,
+      clipBehavior: widget.listConfig.clipBehavior,
+      itemCount: _totalGroupedItemCount(groupOrder, groupMap),
+      itemBuilder: (context, flatIndex) {
+        return _groupedItemBuilder(
+            context, flatIndex, groupOrder, groupMap, searchTerms);
+      },
+    );
+  }
+
+  int _totalGroupedItemCount(
+      List<Object> groupOrder, Map<Object, List<_IndexedItem<T>>> groupMap) {
+    int count = 0;
+    for (final key in groupOrder) {
+      count += 1 + groupMap[key]!.length; // 1 header + items
+    }
+    if (_controller.isLoadingMore) count += 1;
+    return count;
+  }
+
+  Widget _groupedItemBuilder(
+    BuildContext context,
+    int flatIndex,
+    List<Object> groupOrder,
+    Map<Object, List<_IndexedItem<T>>> groupMap,
+    List<String> searchTerms,
+  ) {
+    int current = 0;
+    for (final key in groupOrder) {
+      final groupItems = groupMap[key]!;
+      if (flatIndex == current) {
+        // This is a group header
+        return widget.groupHeaderBuilder?.call(context, key, groupItems.length) ??
+            DefaultGroupHeader(groupValue: key, itemCount: groupItems.length);
+      }
+      current += 1; // header
+      if (flatIndex < current + groupItems.length) {
+        final itemIndex = flatIndex - current;
+        final indexed = groupItems[itemIndex];
+        return _itemBuilder(context, indexed.index, searchTerms);
+      }
+      current += groupItems.length;
+    }
+
+    // Loading more indicator at bottom
+    return const DefaultLoadMoreWidget();
+  }
+
   Widget _itemBuilder(
       BuildContext context, int index, List<String> searchTerms) {
     // Handle loading more indicator
@@ -430,6 +545,30 @@ class _SmartSearchListState<T extends Object>
       searchTerms: searchTerms,
     );
 
+    // Wrap with selection checkbox if enabled
+    if (widget.selectionConfig != null && widget.selectionConfig!.enabled) {
+      final isSelected = _controller.isSelected(item);
+      if (widget.selectionConfig!.showCheckbox) {
+        final checkbox = Checkbox(
+          value: isSelected,
+          onChanged: (_) {
+            _controller.toggleSelection(item);
+            widget.onSelectionChanged?.call(_controller.selectedItems);
+          },
+        );
+
+        if (widget.selectionConfig!.position == CheckboxPosition.leading) {
+          itemWidget = Row(
+            children: [checkbox, Expanded(child: itemWidget)],
+          );
+        } else {
+          itemWidget = Row(
+            children: [Expanded(child: itemWidget), checkbox],
+          );
+        }
+      }
+    }
+
     // Add tap handling if needed
     if (widget.onItemTap != null) {
       itemWidget = GestureDetector(
@@ -440,4 +579,11 @@ class _SmartSearchListState<T extends Object>
 
     return itemWidget;
   }
+}
+
+/// Internal helper for tracking original index in grouped views
+class _IndexedItem<T> {
+  final T item;
+  final int index;
+  const _IndexedItem(this.item, this.index);
 }

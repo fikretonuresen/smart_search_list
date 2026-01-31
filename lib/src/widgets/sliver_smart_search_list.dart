@@ -58,6 +58,25 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
   final bool cacheResults;
   final int maxCacheSize;
 
+  /// Multi-select configuration. When non-null, multi-select mode is enabled.
+  final SelectionConfiguration? selectionConfig;
+
+  /// Called when selection changes (multi-select mode)
+  final void Function(Set<T> selectedItems)? onSelectionChanged;
+
+  /// Groups items by the returned value. When non-null, items are displayed
+  /// in sections with sticky headers using SliverMainAxisGroup.
+  final Object Function(T item)? groupBy;
+
+  /// Builder for group section headers. If null, [DefaultGroupHeader] is used.
+  final GroupHeaderBuilder? groupHeaderBuilder;
+
+  /// Comparator for ordering groups. If null, groups appear in insertion order.
+  final Comparator<Object>? groupComparator;
+
+  /// Maximum extent for sticky group headers (default: 48.0)
+  final double groupHeaderExtent;
+
   const SliverSmartSearchList({
     super.key,
     this.items,
@@ -77,10 +96,19 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
     this.onRefresh,
     this.cacheResults = true,
     this.maxCacheSize = 100,
+    this.selectionConfig,
+    this.onSelectionChanged,
+    this.groupBy,
+    this.groupHeaderBuilder,
+    this.groupComparator,
+    this.groupHeaderExtent = 48.0,
   }) : assert(
-          (items != null && asyncLoader == null) ||
-              (items == null && asyncLoader != null),
+          items == null || asyncLoader == null,
           'Provide either items OR asyncLoader, not both',
+        ),
+        assert(
+          items != null || asyncLoader != null || controller != null,
+          'Provide items, asyncLoader, or a controller',
         );
 
   @override
@@ -121,8 +149,17 @@ class _SliverSmartSearchListState<T extends Object>
       _controllerCreatedInternally = true;
     }
 
+    // Listen to controller changes
+    _controller.addListener(_onControllerChanged);
+
     // Initialize data
     _initializeData();
+  }
+
+  void _onControllerChanged() {
+    if (!_isDisposed && mounted) {
+      setState(() {});
+    }
   }
 
   void _initializeData() {
@@ -141,6 +178,7 @@ class _SliverSmartSearchListState<T extends Object>
   @override
   void dispose() {
     _isDisposed = true;
+    _controller.removeListener(_onControllerChanged);
 
     if (_controllerCreatedInternally) {
       _controller.dispose();
@@ -151,12 +189,7 @@ class _SliverSmartSearchListState<T extends Object>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return _buildSliver();
-      },
-    );
+    return _buildSliver();
   }
 
   Widget _buildSliver() {
@@ -207,6 +240,9 @@ class _SliverSmartSearchListState<T extends Object>
     }
 
     // Build the main list
+    if (widget.groupBy != null) {
+      return _buildGroupedSlivers();
+    }
     return _buildSliverList();
   }
 
@@ -226,6 +262,78 @@ class _SliverSmartSearchListState<T extends Object>
     );
   }
 
+  Widget _buildGroupedSlivers() {
+    final items = _controller.items;
+    final groupBy = widget.groupBy!;
+
+    // Build grouped data preserving order
+    final groupOrder = <Object>[];
+    final groupMap = <Object, List<_SliverIndexedItem<T>>>{};
+
+    for (var i = 0; i < items.length; i++) {
+      final key = groupBy(items[i]);
+      if (!groupMap.containsKey(key)) {
+        groupOrder.add(key);
+        groupMap[key] = [];
+      }
+      groupMap[key]!.add(_SliverIndexedItem(items[i], i));
+    }
+
+    // Sort groups if comparator provided
+    if (widget.groupComparator != null) {
+      groupOrder.sort(widget.groupComparator!);
+    }
+
+    // Build sliver groups with sticky headers using SliverMainAxisGroup
+    final slivers = <Widget>[];
+
+    for (final key in groupOrder) {
+      final groupItems = groupMap[key]!;
+      slivers.add(
+        SliverMainAxisGroup(
+          slivers: [
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _GroupHeaderDelegate(
+                maxExtent: widget.groupHeaderExtent,
+                minExtent: widget.groupHeaderExtent,
+                child: widget.groupHeaderBuilder?.call(
+                        context, key, groupItems.length) ??
+                    DefaultGroupHeader(
+                        groupValue: key, itemCount: groupItems.length),
+              ),
+            ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final indexed = groupItems[index];
+                  return _itemBuilder(context, indexed.index);
+                },
+                childCount: groupItems.length,
+                addAutomaticKeepAlives:
+                    widget.listConfig.addAutomaticKeepAlives,
+                addRepaintBoundaries: widget.listConfig.addRepaintBoundaries,
+                addSemanticIndexes: widget.listConfig.addSemanticIndexes,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Loading more indicator
+    if (_controller.isLoadingMore) {
+      slivers.add(
+        const SliverToBoxAdapter(child: DefaultLoadMoreWidget()),
+      );
+    }
+
+    // MultiSliver requires returning a single widget. Use SliverMainAxisGroup
+    // to wrap multiple groups, or return them via a helper.
+    // Since build() already returns a single Widget, we need a wrapper.
+    return SliverMainAxisGroup(slivers: slivers);
+  }
+
   Widget _itemBuilder(BuildContext context, int index) {
     // Handle loading more indicator
     if (index >= _controller.items.length) {
@@ -236,6 +344,30 @@ class _SliverSmartSearchListState<T extends Object>
 
     Widget itemWidget = widget.itemBuilder(context, item, index);
 
+    // Wrap with selection checkbox if enabled
+    if (widget.selectionConfig != null && widget.selectionConfig!.enabled) {
+      final isSelected = _controller.isSelected(item);
+      if (widget.selectionConfig!.showCheckbox) {
+        final checkbox = Checkbox(
+          value: isSelected,
+          onChanged: (_) {
+            _controller.toggleSelection(item);
+            widget.onSelectionChanged?.call(_controller.selectedItems);
+          },
+        );
+
+        if (widget.selectionConfig!.position == CheckboxPosition.leading) {
+          itemWidget = Row(
+            children: [checkbox, Expanded(child: itemWidget)],
+          );
+        } else {
+          itemWidget = Row(
+            children: [Expanded(child: itemWidget), checkbox],
+          );
+        }
+      }
+    }
+
     // Add tap handling if needed
     if (widget.onItemTap != null) {
       itemWidget = GestureDetector(
@@ -245,5 +377,42 @@ class _SliverSmartSearchListState<T extends Object>
     }
 
     return itemWidget;
+  }
+}
+
+/// Internal helper for tracking original index in grouped sliver views
+class _SliverIndexedItem<T> {
+  final T item;
+  final int index;
+  const _SliverIndexedItem(this.item, this.index);
+}
+
+/// Delegate for sticky group headers in sliver grouped lists
+class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  @override
+  final double maxExtent;
+
+  @override
+  final double minExtent;
+
+  _GroupHeaderDelegate({
+    required this.child,
+    required this.maxExtent,
+    required this.minExtent,
+  });
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  bool shouldRebuild(covariant _GroupHeaderDelegate oldDelegate) {
+    return child != oldDelegate.child ||
+        maxExtent != oldDelegate.maxExtent ||
+        minExtent != oldDelegate.minExtent;
   }
 }

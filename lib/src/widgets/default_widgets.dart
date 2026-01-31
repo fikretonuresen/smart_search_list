@@ -10,12 +10,17 @@ class DefaultSearchField extends StatelessWidget {
   final SearchConfiguration configuration;
   final VoidCallback onClear;
 
+  /// Called when the user submits the search (presses Enter/Search on keyboard).
+  /// Only wired when [SearchTriggerMode.onSubmit] is active.
+  final ValueChanged<String>? onSubmitted;
+
   const DefaultSearchField({
     super.key,
     required this.controller,
     required this.focusNode,
     required this.configuration,
     required this.onClear,
+    this.onSubmitted,
   });
 
   @override
@@ -25,23 +30,54 @@ class DefaultSearchField extends StatelessWidget {
       child: ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
+          final isSubmitMode =
+              configuration.triggerMode == SearchTriggerMode.onSubmit;
+
+          // Build suffix icons
+          Widget? suffixIcon;
+          final suffixChildren = <Widget>[];
+
+          if (isSubmitMode) {
+            suffixChildren.add(
+              IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () => onSubmitted?.call(controller.text),
+              ),
+            );
+          }
+
+          if (configuration.showClearButton && controller.text.isNotEmpty) {
+            suffixChildren.add(
+              IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: onClear,
+              ),
+            );
+          }
+
+          if (suffixChildren.length == 1) {
+            suffixIcon = suffixChildren.first;
+          } else if (suffixChildren.length > 1) {
+            suffixIcon = Row(
+              mainAxisSize: MainAxisSize.min,
+              children: suffixChildren,
+            );
+          }
+
           return TextField(
             controller: controller,
             focusNode: focusNode,
             autofocus: configuration.autofocus,
             keyboardType: configuration.keyboardType,
-            textInputAction: configuration.textInputAction,
+            textInputAction: isSubmitMode
+                ? TextInputAction.search
+                : configuration.textInputAction,
+            onSubmitted: isSubmitMode ? onSubmitted : null,
             decoration: configuration.decoration ??
                 InputDecoration(
                   hintText: configuration.hintText,
                   prefixIcon: const Icon(Icons.search),
-                  suffixIcon: configuration.showClearButton &&
-                          controller.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: onClear,
-                        )
-                      : null,
+                  suffixIcon: suffixIcon,
                   border: const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12.0)),
                   ),
@@ -205,6 +241,40 @@ class DefaultEmptySearchWidget extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Default group header widget for grouped lists
+///
+/// Displays the group value as a section header with item count
+class DefaultGroupHeader extends StatelessWidget {
+  /// The group value (typically a String like a category name)
+  final Object groupValue;
+
+  /// Number of items in this group
+  final int itemCount;
+
+  const DefaultGroupHeader({
+    super.key,
+    required this.groupValue,
+    required this.itemCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Text(
+        '$groupValue ($itemCount)',
+        style: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );

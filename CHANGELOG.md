@@ -1,3 +1,48 @@
+## 0.2.0
+
+🎯 **Feature Release** - Multi-select, grouped lists, and search trigger modes.
+
+### ✨ New Features
+- **Multi-Select Support**: Select/deselect items with checkboxes via `SelectionConfiguration`
+  - Controller methods: `toggleSelection()`, `selectAll()`, `deselectAll()`, `selectWhere()`, `isSelected()`
+  - Configurable checkbox position (leading/trailing) and visibility
+  - `onSelectionChanged` callback for reacting to selection changes
+- **Grouped Lists**: Group items into sections with headers via `groupBy` function
+  - Automatic grouping — provide a `groupBy: (item) => item.category` function
+  - `DefaultGroupHeader` with group name and item count
+  - Custom `groupHeaderBuilder` for full control
+  - `groupComparator` for ordering groups
+  - Empty groups auto-removed after search/filter
+  - Sticky headers in `SliverSmartSearchList` via `SliverMainAxisGroup`
+- **Search Trigger Modes**: Control when search fires via `SearchTriggerMode` enum
+  - `onEdit` (default): debounced search on every keystroke
+  - `onSubmit`: search only on keyboard submit or search button tap
+  - `searchImmediate()` method for bypassing debounce programmatically
+
+### 🔧 API Changes
+- New `SearchTriggerMode` enum: `{ onEdit, onSubmit }`
+- New `SelectionConfiguration` class with `enabled`, `showCheckbox`, `position`
+- New `CheckboxPosition` enum: `{ leading, trailing }`
+- New `GroupHeaderBuilder` typedef
+- `SearchConfiguration` gains `triggerMode` parameter
+- `SmartSearchList` gains `selectionConfig`, `groupBy`, `groupHeaderBuilder`, `groupComparator`, `onSelectionChanged`
+- `SliverSmartSearchList` gains the same plus `groupHeaderExtent` for sticky header size
+- `SmartSearchController` gains multi-select methods and `searchImmediate()`
+- `DefaultSearchField` gains `onSubmitted` callback for submit mode
+
+### ⚠️ Breaking Changes
+- Minimum Flutter version bumped from 3.10.0 to **3.13.0** (required for `SliverMainAxisGroup`)
+
+### 🎨 Example Updates
+- New **Multi-Select** example: checkbox list with select all/deselect all
+- New **Grouped List** example: products grouped by category with search
+
+### ⚡ Backward Compatibility
+- All new parameters are optional with sensible defaults
+- Existing code continues to work without modifications
+
+---
+
 ## 0.1.1
 
 🚀 **Enhanced Features Release** - Added search term highlighting support and below-search widget slot.

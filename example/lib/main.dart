@@ -117,6 +117,54 @@ class ExampleHomePage extends StatelessWidget {
                   builder: (_) => const AdvancedConfigExample(),
                 )),
           ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Multi-Select',
+            'Select items with checkboxes, filter + selection',
+            Icons.checklist,
+            () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MultiSelectExample(),
+                )),
+          ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Grouped List',
+            'Items grouped by category with headers',
+            Icons.category,
+            () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const GroupedListExample(),
+                )),
+          ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Grouped Sliver (Sticky Headers)',
+            'SliverSmartSearchList with sticky group headers',
+            Icons.view_day,
+            () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const GroupedSliverExample(),
+                )),
+          ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Search Trigger Modes',
+            'Toggle between onEdit and onSubmit modes',
+            Icons.keyboard,
+            () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SearchTriggerModeExample(),
+                )),
+          ),
         ],
       ),
     );
@@ -1325,6 +1373,409 @@ class _AdvancedConfigExampleState extends State<AdvancedConfigExample> {
                   const SnackBar(content: Text('Advanced config refreshed!')),
                 );
               },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Example 8: Multi-Select
+// QA Tests:
+//   1. Tap Test: Tap item -> checkbox animates immediately
+//   2. Count Test: Select 3, scroll away, scroll back -> still checked
+//   3. Filter Edge Case: Select "Apple", search "Banana", select "Banana",
+//      clear search -> both Apple AND Banana must be selected
+//   4. Select All: Tap "Select All", rapid scroll -> every item checked
+// =============================================================================
+
+class MultiSelectExample extends StatefulWidget {
+  const MultiSelectExample({super.key});
+
+  @override
+  State<MultiSelectExample> createState() => _MultiSelectExampleState();
+}
+
+class _MultiSelectExampleState extends State<MultiSelectExample> {
+  final _controller = SmartSearchController<String>(
+    searchableFields: (item) => [item],
+  );
+
+  // 50 items so we have enough to scroll off-screen
+  final _items = List.generate(50, (i) {
+    const names = [
+      'Apple', 'Banana', 'Cherry', 'Date', 'Elderberry',
+      'Fig', 'Grape', 'Honeydew', 'Kiwi', 'Lemon',
+      'Mango', 'Nectarine', 'Orange', 'Papaya', 'Quince',
+      'Raspberry', 'Strawberry', 'Tangerine', 'Watermelon', 'Zucchini',
+      'Artichoke', 'Broccoli', 'Carrot', 'Daikon', 'Endive',
+    ];
+    return '${names[i % names.length]} ${i + 1}';
+  });
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Multi-Select'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.select_all),
+            tooltip: 'Select All',
+            onPressed: () => _controller.selectAll(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.deselect),
+            tooltip: 'Deselect All',
+            onPressed: () => _controller.deselectAll(),
+          ),
+        ],
+      ),
+      body: SmartSearchList<String>(
+        items: _items,
+        controller: _controller,
+        searchableFields: (item) => [item],
+        itemBuilder: (context, item, index, {searchTerms = const []}) {
+          return ListTile(
+            title: Text(item),
+            subtitle: Text('Index: $index'),
+          );
+        },
+        selectionConfig: const SelectionConfiguration(
+          enabled: true,
+          showCheckbox: true,
+          position: CheckboxPosition.leading,
+        ),
+        onSelectionChanged: (selected) {
+          // Trigger rebuild for the banner
+          setState(() {});
+        },
+        belowSearchWidget: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final selected = _controller.selectedItems;
+            if (selected.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                child: Text(
+                  'QA: Select items, search to filter, verify selection persists.',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              );
+            }
+            return Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Text(
+                '${selected.length} selected: ${selected.take(5).join(", ")}${selected.length > 5 ? "..." : ""}',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  fontSize: 13,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Example 9: Grouped List (non-sliver, no sticky headers)
+// QA Tests:
+//   1. Logic Check: Items under correct group headers
+//   2. Sorting Check: Groups in alphabetical order (comparator)
+//   3. Empty Group Check: Search "Xylophone" -> no stray headers, just empty state
+//   4. Filter removes groups: Search "MacBook" -> only Electronics header shown
+// =============================================================================
+
+class GroupedListExample extends StatelessWidget {
+  const GroupedListExample({super.key});
+
+  static final _products = [
+    // Electronics (4 items)
+    Product(id: '1', name: 'MacBook Pro', price: 2499.0, category: 'Electronics', inStock: true, rating: 4.8),
+    Product(id: '2', name: 'iPhone 15', price: 999.0, category: 'Electronics', inStock: true, rating: 4.7),
+    Product(id: '3', name: 'AirPods Pro', price: 249.0, category: 'Electronics', inStock: false, rating: 4.5),
+    Product(id: '4', name: 'Samsung Galaxy', price: 899.0, category: 'Electronics', inStock: true, rating: 4.6),
+    // Sports (4 items)
+    Product(id: '5', name: 'Running Shoes', price: 129.0, category: 'Sports', inStock: true, rating: 4.3),
+    Product(id: '6', name: 'Yoga Mat', price: 49.0, category: 'Sports', inStock: true, rating: 4.6),
+    Product(id: '7', name: 'Water Bottle', price: 25.0, category: 'Sports', inStock: true, rating: 4.2),
+    Product(id: '8', name: 'Tennis Racket', price: 189.0, category: 'Sports', inStock: false, rating: 4.4),
+    // Books (4 items)
+    Product(id: '9', name: 'The Great Gatsby', price: 12.0, category: 'Books', inStock: true, rating: 4.4),
+    Product(id: '10', name: 'Italian Kitchen', price: 29.0, category: 'Books', inStock: false, rating: 4.1),
+    Product(id: '11', name: 'Flutter in Action', price: 39.0, category: 'Books', inStock: true, rating: 4.9),
+    Product(id: '12', name: 'Clean Code', price: 34.0, category: 'Books', inStock: true, rating: 4.7),
+    // Clothing (4 items)
+    Product(id: '13', name: 'T-Shirt', price: 19.0, category: 'Clothing', inStock: true, rating: 4.0),
+    Product(id: '14', name: 'Jeans', price: 59.0, category: 'Clothing', inStock: true, rating: 4.3),
+    Product(id: '15', name: 'Hoodie', price: 45.0, category: 'Clothing', inStock: true, rating: 4.5),
+    Product(id: '16', name: 'Sneakers', price: 99.0, category: 'Clothing', inStock: false, rating: 4.2),
+    // Home (4 items)
+    Product(id: '17', name: 'Desk Lamp', price: 35.0, category: 'Home', inStock: true, rating: 4.1),
+    Product(id: '18', name: 'Plant Pot', price: 15.0, category: 'Home', inStock: true, rating: 4.0),
+    Product(id: '19', name: 'Wall Clock', price: 28.0, category: 'Home', inStock: true, rating: 4.3),
+    Product(id: '20', name: 'Throw Pillow', price: 22.0, category: 'Home', inStock: false, rating: 3.9),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Grouped List')),
+      body: SmartSearchList<Product>(
+        items: _products,
+        searchableFields: (p) => [p.name, p.category],
+        itemBuilder: (context, product, index, {searchTerms = const []}) {
+          return ListTile(
+            title: Text(product.name),
+            subtitle: Text('${product.category} - \$${product.price.toStringAsFixed(2)}'),
+            trailing: product.inStock
+                ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                : const Icon(Icons.cancel, color: Colors.red, size: 20),
+          );
+        },
+        groupBy: (product) => product.category,
+        groupComparator: (a, b) => (a as String).compareTo(b as String),
+        searchConfig: const SearchConfiguration(
+          hintText: 'Search products (try "MacBook" or "Xylophone")...',
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Example 10: Grouped Sliver with Sticky Headers
+// QA Tests:
+//   1. Sticky Physics: Scroll slowly. First group header sticks to top until
+//      next group header pushes it out. If it scrolls off, sticky is broken.
+//   2. Search: Type "Running" -> only Sports group with "Running Shoes" shown.
+//   3. Empty: Search "Xylophone" -> "No results" empty state, no stray headers.
+// =============================================================================
+
+class GroupedSliverExample extends StatefulWidget {
+  const GroupedSliverExample({super.key});
+
+  @override
+  State<GroupedSliverExample> createState() => _GroupedSliverExampleState();
+}
+
+class _GroupedSliverExampleState extends State<GroupedSliverExample> {
+  final _controller = SmartSearchController<Product>(
+    searchableFields: (p) => [p.name, p.category],
+  );
+  final _textController = TextEditingController();
+
+  // Reuse the same products but more items per group for scroll testing
+  static final _products = [
+    // Electronics
+    ...List.generate(8, (i) => Product(
+      id: 'e$i', name: 'Electronic Item ${i + 1}', price: 100.0 + i * 50,
+      category: 'Electronics', inStock: i % 3 != 0, rating: 4.0 + i * 0.1,
+    )),
+    // Sports
+    ...List.generate(8, (i) => Product(
+      id: 's$i', name: 'Sports Item ${i + 1}', price: 20.0 + i * 15,
+      category: 'Sports', inStock: i % 2 == 0, rating: 3.8 + i * 0.15,
+    )),
+    // Books
+    ...List.generate(8, (i) => Product(
+      id: 'b$i', name: 'Book Title ${i + 1}', price: 10.0 + i * 5,
+      category: 'Books', inStock: true, rating: 4.2 + i * 0.05,
+    )),
+    // Clothing
+    ...List.generate(8, (i) => Product(
+      id: 'c$i', name: 'Clothing Item ${i + 1}', price: 15.0 + i * 10,
+      category: 'Clothing', inStock: i % 4 != 0, rating: 3.9 + i * 0.1,
+    )),
+    // Home
+    ...List.generate(8, (i) => Product(
+      id: 'h$i', name: 'Home Item ${i + 1}', price: 8.0 + i * 12,
+      category: 'Home', inStock: i % 3 == 0, rating: 4.0 + i * 0.08,
+    )),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.setItems(_products);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Sticky Grouped Headers')),
+      body: Column(
+        children: [
+          // Manual search field since SliverSmartSearchList doesn't include one
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _textController,
+              decoration: InputDecoration(
+                hintText: 'Search (try "Item 1" or "Xylophone")...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _textController.clear();
+                    _controller.searchImmediate('');
+                  },
+                ),
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                ),
+              ),
+              onChanged: (query) => _controller.search(query),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              'QA: Scroll slowly. Headers should STICK to top until pushed by next header.',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                SliverSmartSearchList<Product>(
+                  controller: _controller,
+                  searchableFields: (p) => [p.name, p.category],
+                  itemBuilder:
+                      (context, product, index, {searchTerms = const []}) {
+                    return ListTile(
+                      title: Text(product.name),
+                      subtitle: Text(
+                          '${product.category} - \$${product.price.toStringAsFixed(2)}'),
+                      trailing: product.inStock
+                          ? const Icon(Icons.check_circle,
+                              color: Colors.green, size: 20)
+                          : const Icon(Icons.cancel,
+                              color: Colors.red, size: 20),
+                    );
+                  },
+                  groupBy: (product) => product.category,
+                  groupComparator: (a, b) =>
+                      (a as String).compareTo(b as String),
+                  groupHeaderExtent: 44.0,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Example 11: Search Trigger Modes
+// QA Tests:
+//   1. onEdit mode: Type "A", wait 300ms -> list filters automatically
+//   2. onSubmit mode: Type "App" -> nothing happens. Press keyboard
+//      Search/Done -> list filters. Tap search icon button -> list filters.
+// =============================================================================
+
+class SearchTriggerModeExample extends StatefulWidget {
+  const SearchTriggerModeExample({super.key});
+
+  @override
+  State<SearchTriggerModeExample> createState() =>
+      _SearchTriggerModeExampleState();
+}
+
+class _SearchTriggerModeExampleState extends State<SearchTriggerModeExample> {
+  SearchTriggerMode _mode = SearchTriggerMode.onEdit;
+
+  final _fruits = [
+    'Apple', 'Apricot', 'Avocado', 'Banana', 'Blackberry',
+    'Blueberry', 'Cherry', 'Coconut', 'Cranberry', 'Date',
+    'Elderberry', 'Fig', 'Grape', 'Guava', 'Honeydew',
+    'Kiwi', 'Lemon', 'Lime', 'Lychee', 'Mango',
+    'Nectarine', 'Orange', 'Papaya', 'Peach', 'Pear',
+    'Pineapple', 'Plum', 'Pomegranate', 'Quince', 'Raspberry',
+    'Strawberry', 'Tangerine', 'Watermelon',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Search Trigger Modes'),
+      ),
+      body: Column(
+        children: [
+          // Mode toggle
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SegmentedButton<SearchTriggerMode>(
+              segments: const [
+                ButtonSegment(
+                  value: SearchTriggerMode.onEdit,
+                  label: Text('onEdit (live)'),
+                  icon: Icon(Icons.edit),
+                ),
+                ButtonSegment(
+                  value: SearchTriggerMode.onSubmit,
+                  label: Text('onSubmit'),
+                  icon: Icon(Icons.keyboard_return),
+                ),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (modes) {
+                setState(() => _mode = modes.first);
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              _mode == SearchTriggerMode.onEdit
+                  ? 'QA: Type "App" — list should filter after ~300ms automatically.'
+                  : 'QA: Type "App" — NOTHING should happen. Press Enter or tap search icon to trigger.',
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            // Key forces widget rebuild when mode changes
+            child: SmartSearchList<String>(
+              key: ValueKey(_mode),
+              items: _fruits,
+              searchableFields: (item) => [item],
+              itemBuilder: (context, item, index, {searchTerms = const []}) {
+                return ListTile(
+                  title: Text(item),
+                );
+              },
+              searchConfig: SearchConfiguration(
+                triggerMode: _mode,
+                hintText: _mode == SearchTriggerMode.onEdit
+                    ? 'Type to search (live)...'
+                    : 'Type then press Enter to search...',
+              ),
             ),
           ),
         ],

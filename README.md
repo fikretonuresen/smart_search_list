@@ -18,6 +18,12 @@ A highly performant, customizable Flutter package for searchable lists with zero
 - 🔍 **Smart Search** - Debounced search with multiple field support
 - 📄 **Pagination Support** - Infinite scroll with pull-to-refresh
 - 🎯 **Two Empty States** - Different messages for no data vs no search results
+- 🔎 **Search Term Highlighting** - Matched terms passed to itemBuilder for custom highlighting
+- 🧩 **Below Search Widget** - Slot for filters, chips, or controls below the search field
+- ⚙️ **Dynamic Configuration** - Update search settings at runtime via controller
+- ☑️ **Multi-Select** - Built-in selection with checkboxes, select all, and predicate-based selection
+- 📂 **Grouped Lists** - Group items into sections with headers via a `groupBy` function
+- 🎯 **Search Trigger Modes** - Choose between live search (onEdit) or submit-based search (onSubmit)
 - 🔧 **Zero Dependencies** - Only uses Flutter SDK
 
 ## 🚨 Why Not `searchable_listview`?
@@ -37,7 +43,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  smart_search_list: ^0.1.1
+  smart_search_list: ^0.2.0
 ```
 
 ## 🚀 Quick Start
@@ -163,6 +169,15 @@ SmartSearchList<T>(
   emptySearchBuilder: (context, query) {
     return NoResultsWidget(searchQuery: query);
   },
+
+  // Widget below search field (filters, chips, etc.)
+  belowSearchWidget: Wrap(
+    spacing: 8,
+    children: [
+      FilterChip(label: Text('In Stock'), onSelected: (_) {}),
+      FilterChip(label: Text('On Sale'), onSelected: (_) {}),
+    ],
+  ),
 )
 ```
 
@@ -190,6 +205,133 @@ SmartSearchList<T>(
     enabled: true,
     triggerDistance: 200.0,
   ),
+)
+```
+
+### Search Term Highlighting
+
+The `itemBuilder` receives `searchTerms` — a list of matched words you can use to highlight text:
+
+```dart
+SmartSearchList<String>(
+  items: fruits,
+  searchableFields: (item) => [item],
+  itemBuilder: (context, item, index, {searchTerms = const []}) {
+    if (searchTerms.isEmpty) return ListTile(title: Text(item));
+
+    return ListTile(
+      title: _highlightText(item, searchTerms),
+    );
+  },
+)
+
+Widget _highlightText(String text, List<String> terms) {
+  // Split text and bold matched terms
+  final spans = <TextSpan>[];
+  final lowerText = text.toLowerCase();
+  int start = 0;
+
+  for (final term in terms) {
+    final idx = lowerText.indexOf(term.toLowerCase(), start);
+    if (idx >= 0) {
+      if (idx > start) spans.add(TextSpan(text: text.substring(start, idx)));
+      spans.add(TextSpan(
+        text: text.substring(idx, idx + term.length),
+        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+      ));
+      start = idx + term.length;
+    }
+  }
+  if (start < text.length) spans.add(TextSpan(text: text.substring(start)));
+
+  return RichText(text: TextSpan(children: spans, style: const TextStyle(color: Colors.black)));
+}
+```
+
+### Dynamic Configuration
+
+Update search settings at runtime using controller methods:
+
+```dart
+final controller = SmartSearchController<Product>(
+  searchableFields: (p) => [p.name],
+);
+
+// Toggle case sensitivity
+controller.updateCaseSensitive(true);
+
+// Set minimum search length
+controller.updateMinSearchLength(3);
+```
+
+### Multi-Select
+
+Enable item selection with built-in checkboxes:
+
+```dart
+SmartSearchList<String>(
+  items: ['Apple', 'Banana', 'Cherry'],
+  searchableFields: (item) => [item],
+  itemBuilder: (context, item, index, {searchTerms = const []}) {
+    return ListTile(title: Text(item));
+  },
+  selectionConfig: const SelectionConfiguration(
+    enabled: true,
+    showCheckbox: true,
+    position: CheckboxPosition.leading,
+  ),
+  onSelectionChanged: (selectedItems) {
+    print('Selected: ${selectedItems.length} items');
+  },
+)
+```
+
+Programmatic selection via controller:
+
+```dart
+controller.selectAll();
+controller.deselectAll();
+controller.selectWhere((item) => item.startsWith('A'));
+controller.toggleSelection(item);
+```
+
+### Grouped Lists
+
+Group items into sections with headers:
+
+```dart
+SmartSearchList<Product>(
+  items: products,
+  searchableFields: (p) => [p.name, p.category],
+  itemBuilder: (context, product, index, {searchTerms = const []}) {
+    return ListTile(title: Text(product.name));
+  },
+  groupBy: (product) => product.category,
+  groupComparator: (a, b) => (a as String).compareTo(b as String),
+)
+```
+
+Sticky headers are supported in `SliverSmartSearchList` via `SliverMainAxisGroup`.
+
+### Search Trigger Modes
+
+Control when search fires:
+
+```dart
+// Live search (default) — triggers on every keystroke
+SmartSearchList<T>(
+  searchConfig: const SearchConfiguration(
+    triggerMode: SearchTriggerMode.onEdit,
+  ),
+  // ...
+)
+
+// Submit-based search — triggers only on Enter/Search button
+SmartSearchList<T>(
+  searchConfig: const SearchConfiguration(
+    triggerMode: SearchTriggerMode.onSubmit,
+  ),
+  // ...
 )
 ```
 

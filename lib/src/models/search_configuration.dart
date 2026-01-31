@@ -1,5 +1,69 @@
 import 'package:flutter/material.dart';
 
+/// Controls when search is triggered
+///
+/// - [onEdit]: Search triggers on every text change (debounced). Default behavior.
+/// - [onSubmit]: Search triggers only when the user presses the keyboard
+///   submit button or taps the search icon.
+enum SearchTriggerMode {
+  /// Search triggers on every text change, debounced by [SearchConfiguration.debounceDelay]
+  onEdit,
+
+  /// Search triggers only on explicit submit (keyboard action or search button tap)
+  onSubmit,
+}
+
+/// Position of selection checkbox relative to item content
+enum CheckboxPosition {
+  /// Checkbox appears before the item content
+  leading,
+
+  /// Checkbox appears after the item content
+  trailing,
+}
+
+/// Configuration for multi-select behavior
+///
+/// Example:
+/// ```dart
+/// const SelectionConfiguration(
+///   enabled: true,
+///   showCheckbox: true,
+///   position: CheckboxPosition.leading,
+/// )
+/// ```
+class SelectionConfiguration {
+  /// Whether multi-select is enabled
+  final bool enabled;
+
+  /// Whether to show a default checkbox for each item
+  ///
+  /// Set to false if you handle selection visuals in your own [itemBuilder].
+  final bool showCheckbox;
+
+  /// Position of the default checkbox
+  final CheckboxPosition position;
+
+  const SelectionConfiguration({
+    this.enabled = true,
+    this.showCheckbox = true,
+    this.position = CheckboxPosition.leading,
+  });
+
+  /// Create a copy with modified values
+  SelectionConfiguration copyWith({
+    bool? enabled,
+    bool? showCheckbox,
+    CheckboxPosition? position,
+  }) {
+    return SelectionConfiguration(
+      enabled: enabled ?? this.enabled,
+      showCheckbox: showCheckbox ?? this.showCheckbox,
+      position: position ?? this.position,
+    );
+  }
+}
+
 /// Builder function for custom search field
 typedef SearchFieldBuilder = Widget Function(
   BuildContext context,
@@ -43,6 +107,17 @@ typedef SortBuilder<T> = Widget Function(
   BuildContext context,
   int Function(T, T)? currentComparator,
   void Function(int Function(T, T)?) onSortChanged,
+);
+
+/// Builder function for group section headers
+///
+/// Called for each group when [SmartSearchList.groupBy] is provided.
+/// [groupValue] is the value returned by the `groupBy` function.
+/// [itemCount] is the number of items in this group.
+typedef GroupHeaderBuilder = Widget Function(
+  BuildContext context,
+  Object groupValue,
+  int itemCount,
 );
 
 /// Builder function for filter controls
@@ -103,6 +178,12 @@ class SearchConfiguration {
   /// Input decoration for search field
   final InputDecoration? decoration;
 
+  /// Controls when search is triggered
+  ///
+  /// [SearchTriggerMode.onEdit] (default): debounced search on every keystroke.
+  /// [SearchTriggerMode.onSubmit]: search only on explicit submit action.
+  final SearchTriggerMode triggerMode;
+
   const SearchConfiguration({
     this.enabled = true,
     this.autofocus = false,
@@ -116,6 +197,7 @@ class SearchConfiguration {
     this.minSearchLength = 0,
     this.padding = const EdgeInsets.all(16.0),
     this.decoration,
+    this.triggerMode = SearchTriggerMode.onEdit,
   });
 
   /// Create a copy with modified values
@@ -132,6 +214,7 @@ class SearchConfiguration {
     int? minSearchLength,
     EdgeInsets? padding,
     InputDecoration? decoration,
+    SearchTriggerMode? triggerMode,
   }) {
     return SearchConfiguration(
       enabled: enabled ?? this.enabled,
@@ -147,6 +230,7 @@ class SearchConfiguration {
       minSearchLength: minSearchLength ?? this.minSearchLength,
       padding: padding ?? this.padding,
       decoration: decoration ?? this.decoration,
+      triggerMode: triggerMode ?? this.triggerMode,
     );
   }
 }

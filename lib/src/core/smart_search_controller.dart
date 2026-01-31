@@ -76,6 +76,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   final Map<String, bool Function(T)> _activeFilters = {};
   int Function(T, T)? _currentComparator;
 
+  // Multi-select
+  final Set<T> _selectedItems = {};
+
   /// Current filtered and sorted items
   List<T> get items => List.unmodifiable(_filteredItems);
 
@@ -160,12 +163,92 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _asyncLoader = loader;
   }
 
+  // ---------------------------------------------------------------------------
+  // Multi-select API
+  // ---------------------------------------------------------------------------
+
+  /// Currently selected items
+  Set<T> get selectedItems => Set.unmodifiable(_selectedItems);
+
+  /// Whether an item is currently selected
+  bool isSelected(T item) => _selectedItems.contains(item);
+
+  /// Toggle selection state of an item
+  void toggleSelection(T item) {
+    if (_isDisposed) return;
+    if (_selectedItems.contains(item)) {
+      _selectedItems.remove(item);
+    } else {
+      _selectedItems.add(item);
+    }
+    _notifyListeners();
+  }
+
+  /// Select a single item
+  void select(T item) {
+    if (_isDisposed) return;
+    if (_selectedItems.add(item)) {
+      _notifyListeners();
+    }
+  }
+
+  /// Deselect a single item
+  void deselect(T item) {
+    if (_isDisposed) return;
+    if (_selectedItems.remove(item)) {
+      _notifyListeners();
+    }
+  }
+
+  /// Select all currently visible (filtered) items
+  void selectAll() {
+    if (_isDisposed) return;
+    _selectedItems.addAll(_filteredItems);
+    _notifyListeners();
+  }
+
+  /// Deselect all items
+  void deselectAll() {
+    if (_isDisposed) return;
+    if (_selectedItems.isEmpty) return;
+    _selectedItems.clear();
+    _notifyListeners();
+  }
+
+  /// Select items matching a predicate (from visible items)
+  void selectWhere(bool Function(T item) predicate) {
+    if (_isDisposed) return;
+    _selectedItems.addAll(_filteredItems.where(predicate));
+    _notifyListeners();
+  }
+
+  /// Deselect items matching a predicate
+  void deselectWhere(bool Function(T item) predicate) {
+    if (_isDisposed) return;
+    _selectedItems.removeWhere(predicate);
+    _notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Search API
+  // ---------------------------------------------------------------------------
+
   /// Perform search with debouncing
   void search(String query) {
     if (_isDisposed) return;
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounceDelay, () => _performSearch(query));
+  }
+
+  /// Perform search immediately, bypassing debounce
+  ///
+  /// Use this for [SearchTriggerMode.onSubmit] or programmatic searches
+  /// where you want instant results.
+  void searchImmediate(String query) {
+    if (_isDisposed) return;
+    _debounceTimer?.cancel();
+    _performSearch(query);
   }
 
   Future<void> _performSearch(String query) async {
@@ -403,6 +486,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   void dispose() {
     _isDisposed = true;
     _debounceTimer?.cancel();
+    _selectedItems.clear();
     _clearCache();
     super.dispose();
   }
