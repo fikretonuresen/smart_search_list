@@ -37,10 +37,10 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
   /// Builder functions for customization
   final SearchFieldBuilder? searchFieldBuilder;
   final SeparatorBuilder? separatorBuilder;
-  final LoadingBuilder? loadingBuilder;
-  final ErrorBuilder? errorBuilder;
-  final EmptyBuilder? emptyBuilder;
-  final EmptySearchBuilder? emptySearchBuilder;
+  final LoadingStateBuilder? loadingStateBuilder;
+  final ErrorStateBuilder? errorStateBuilder;
+  final EmptyStateBuilder? emptyStateBuilder;
+  final EmptySearchStateBuilder? emptySearchStateBuilder;
   final SortBuilder<T>? sortBuilder;
   final FilterBuilder<T>? filterBuilder;
 
@@ -56,6 +56,13 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
 
   /// Called when selection changes (multi-select mode)
   final void Function(Set<T> selectedItems)? onSelectionChanged;
+
+  /// Builder for an inline progress indicator shown during async operations.
+  ///
+  /// Rendered between the search field (and [belowSearchWidget]) and the list.
+  /// Receives the current loading state so you can show/hide a progress bar,
+  /// shimmer, etc. Return [SizedBox.shrink] when not loading.
+  final ProgressIndicatorBuilder? progressIndicatorBuilder;
 
   /// Widget to display below search field (for filters, chips, etc)
   final Widget? belowSearchWidget;
@@ -89,12 +96,13 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
     this.controller,
     this.searchFieldBuilder,
     this.separatorBuilder,
-    this.loadingBuilder,
-    this.errorBuilder,
-    this.emptyBuilder,
-    this.emptySearchBuilder,
+    this.loadingStateBuilder,
+    this.errorStateBuilder,
+    this.emptyStateBuilder,
+    this.emptySearchStateBuilder,
     this.sortBuilder,
     this.filterBuilder,
+    this.progressIndicatorBuilder,
     this.searchConfig = const SearchConfiguration(),
     this.listConfig = const ListConfiguration(),
     this.paginationConfig,
@@ -287,6 +295,13 @@ class _SmartSearchListState<T extends Object>
             // Below search widget
             if (widget.belowSearchWidget != null) widget.belowSearchWidget!,
 
+            // Inline progress indicator
+            if (widget.progressIndicatorBuilder != null)
+              widget.progressIndicatorBuilder!(
+                context,
+                _controller.isLoading || _controller.isLoadingMore,
+              ),
+
             // Sort and filter controls
             if (widget.sortBuilder != null || widget.filterBuilder != null)
               _buildControls(),
@@ -345,13 +360,13 @@ class _SmartSearchListState<T extends Object>
   Widget _buildList() {
     // Handle loading state (initial load)
     if (_controller.isLoading && _controller.items.isEmpty) {
-      return widget.loadingBuilder?.call(context) ??
+      return widget.loadingStateBuilder?.call(context) ??
           const DefaultLoadingWidget();
     }
 
     // Handle error state
     if (_controller.error != null) {
-      return widget.errorBuilder?.call(
+      return widget.errorStateBuilder?.call(
             context,
             _controller.error!,
             () => _controller.retry(),
@@ -366,7 +381,7 @@ class _SmartSearchListState<T extends Object>
     if (_controller.items.isEmpty) {
       // User searched but found nothing
       if (_controller.hasSearched && _controller.searchQuery.isNotEmpty) {
-        return widget.emptySearchBuilder?.call(
+        return widget.emptySearchStateBuilder?.call(
               context,
               _controller.searchQuery,
             ) ??
@@ -376,7 +391,8 @@ class _SmartSearchListState<T extends Object>
       }
       // Initial empty state (no data)
       else {
-        return widget.emptyBuilder?.call(context) ?? const DefaultEmptyWidget();
+        return widget.emptyStateBuilder?.call(context) ??
+            const DefaultEmptyWidget();
       }
     }
 
@@ -513,7 +529,8 @@ class _SmartSearchListState<T extends Object>
       final groupItems = groupMap[key]!;
       if (flatIndex == current) {
         // This is a group header
-        return widget.groupHeaderBuilder?.call(context, key, groupItems.length) ??
+        return widget.groupHeaderBuilder
+                ?.call(context, key, groupItems.length) ??
             DefaultGroupHeader(groupValue: key, itemCount: groupItems.length);
       }
       current += 1; // header

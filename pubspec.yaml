@@ -1,8 +1,8 @@
 name: smart_search_list
 description: >
   A highly performant, customizable Flutter package for searchable lists with zero dependencies.
-  Better than searchable_listview with proper disposal, two empty states, and builder patterns.
-version: 0.2.0
+  Proper disposal safety, two empty states, builder patterns, and async support with pagination.
+version: 0.3.0
 homepage: https://github.com/fikretonuresen/smart_search_list
 repository: https://github.com/fikretonuresen/smart_search_list
 issue_tracker: https://github.com/fikretonuresen/smart_search_list/issues

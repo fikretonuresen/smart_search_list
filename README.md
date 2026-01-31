@@ -1,6 +1,6 @@
 # Smart Search List
 
-A highly performant, customizable Flutter package for searchable lists with zero external dependencies. Built to be better than `searchable_listview` in every way.
+A highly performant, customizable Flutter package for searchable lists with zero external dependencies.
 
 > **🧪 Currently in testing phase** - This package is technically ready but being tested in production apps. Feedback welcome!
 
@@ -24,26 +24,18 @@ A highly performant, customizable Flutter package for searchable lists with zero
 - ☑️ **Multi-Select** - Built-in selection with checkboxes, select all, and predicate-based selection
 - 📂 **Grouped Lists** - Group items into sections with headers via a `groupBy` function
 - 🎯 **Search Trigger Modes** - Choose between live search (onEdit) or submit-based search (onSubmit)
+- 🔄 **Loading Indicator Builder** - Inline loading feedback (shimmer, progress bar) during async operations
 - 🔧 **Zero Dependencies** - Only uses Flutter SDK
 
-## 🚨 Why Not `searchable_listview`?
-
-The popular `searchable_listview` package has several issues:
-- Memory leaks from poor controller management
-- State management bugs causing crashes
-- Limited customization options  
-- No distinction between empty states
-- Poor performance with large datasets
-
-**Smart Search List** solves all these problems with a clean, modern API.
-
 ## 📦 Installation
+
+Requires **Flutter 3.13.0** or higher.
 
 Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  smart_search_list: ^0.2.0
+  smart_search_list: ^0.3.0
 ```
 
 ## 🚀 Quick Start
@@ -114,8 +106,8 @@ class _ProductListPageState extends State<ProductListPage> {
           hintText: 'Search products...',
           debounceDelay: Duration(milliseconds: 300),
         ),
-        emptyBuilder: (context) => const EmptyProductsWidget(),
-        emptySearchBuilder: (context, query) => 
+        emptyStateBuilder: (context) => const EmptyProductsWidget(),
+        emptySearchStateBuilder: (context, query) => 
           NoResultsWidget(searchQuery: query),
       ),
     );
@@ -150,24 +142,30 @@ SmartSearchList<T>(
     return CustomSearchField(controller: controller);
   },
   
-  // Custom loading state
-  loadingBuilder: (context) {
+  // Custom loading state (replaces list when loading initial data)
+  loadingStateBuilder: (context) {
     return CustomLoadingSpinner();
   },
   
   // Custom error state
-  errorBuilder: (context, error, onRetry) {
+  errorStateBuilder: (context, error, onRetry) {
     return CustomErrorWidget(error: error, onRetry: onRetry);
   },
   
   // Custom empty state (no data)
-  emptyBuilder: (context) {
+  emptyStateBuilder: (context) {
     return CustomEmptyWidget();
   },
   
   // Custom empty search state (no results)
-  emptySearchBuilder: (context, query) {
+  emptySearchStateBuilder: (context, query) {
     return NoResultsWidget(searchQuery: query);
+  },
+
+  // Inline loading indicator (shown during async operations)
+  progressIndicatorBuilder: (context, isLoading) {
+    if (!isLoading) return const SizedBox.shrink();
+    return const LinearProgressIndicator(minHeight: 2);
   },
 
   // Widget below search field (filters, chips, etc.)
@@ -343,34 +341,6 @@ Tested performance benchmarks:
 - ✅ **Search performance**: Results in <16ms
 - ✅ **Memory usage**: <50MB for 10K items
 - ✅ **Startup time**: <100ms initialization
-
-## 🔄 Migration from `searchable_listview`
-
-### Before (searchable_listview):
-```dart
-SearchableList<String>(
-  initialList: items,
-  itemBuilder: (String item) => ListTile(title: Text(item)),
-  filter: (value) => items.where((item) => 
-    item.toLowerCase().contains(value.toLowerCase())).toList(),
-)
-```
-
-### After (smart_search_list):
-```dart
-SmartSearchList<String>(
-  items: items,
-  searchableFields: (item) => [item],
-  itemBuilder: (context, item, index) => ListTile(title: Text(item)),
-)
-```
-
-### Key Improvements:
-- ✅ No more crashes after disposal
-- ✅ Better performance with large lists  
-- ✅ Two different empty states
-- ✅ Built-in async support
-- ✅ More customization options
 
 ## 🤝 Contributing
 

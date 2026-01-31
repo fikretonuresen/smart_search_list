@@ -1,3 +1,37 @@
+## 0.3.0
+
+🔄 **Progress Indicator Builder** - Inline loading feedback for async operations.
+
+### ✨ New Features
+- **Progress Indicator Builder**: New `progressIndicatorBuilder` parameter on `SmartSearchList`
+  - Shows an inline widget (e.g., thin progress bar, shimmer) below the search field during async operations
+  - Unlike `loadingStateBuilder` (which replaces the entire list), this renders alongside existing content
+  - Receives `(BuildContext context, bool isLoading)` — return `SizedBox.shrink()` when not loading
+- New `ProgressIndicatorBuilder` typedef
+
+### 🔧 Improvements
+- Cleaned up package description and documentation tone
+
+### ⚠️ Breaking Changes
+All state builders renamed for consistency — the `*StateBuilder` suffix now clearly indicates builders that replace the entire list area:
+- `loadingBuilder` → **`loadingStateBuilder`**
+- `errorBuilder` → **`errorStateBuilder`**
+- `emptyBuilder` → **`emptyStateBuilder`**
+- `emptySearchBuilder` → **`emptySearchStateBuilder`**
+- `LoadingBuilder` → **`LoadingStateBuilder`**
+- `ErrorBuilder` → **`ErrorStateBuilder`**
+- `EmptyBuilder` → **`EmptyStateBuilder`**
+- `EmptySearchBuilder` → **`EmptySearchStateBuilder`**
+
+### ⚡ Migration
+Find-and-replace in your code:
+- `loadingBuilder:` → `loadingStateBuilder:`
+- `errorBuilder:` → `errorStateBuilder:`
+- `emptyBuilder:` → `emptyStateBuilder:`
+- `emptySearchBuilder:` → `emptySearchStateBuilder:`
+
+---
+
 ## 0.2.0
 
 🎯 **Feature Release** - Multi-select, grouped lists, and search trigger modes.
@@ -104,10 +138,10 @@
 All UI components are customizable:
 - `searchFieldBuilder` - Custom search field
 - `itemBuilder` - List item rendering (required)
-- `loadingBuilder` - Loading state
-- `errorBuilder` - Error state with retry
-- `emptyBuilder` - Empty state (no data)
-- `emptySearchBuilder` - Empty search results
+- `loadingStateBuilder` - Loading state
+- `errorStateBuilder` - Error state with retry
+- `emptyStateBuilder` - Empty state (no data)
+- `emptySearchStateBuilder` - Empty search results
 - `separatorBuilder` - List separators
 
 ### 📱 Example Apps
@@ -125,5 +159,3 @@ Complete example app with 7 comprehensive demonstrations:
 - Fixed Advanced Configuration example with proper state management
 - Improved filter count display with reactive UI updates
 
-### 🔄 Migration
-Easy migration from `searchable_listview` - see README for examples.

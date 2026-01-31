@@ -693,6 +693,10 @@ class _AsyncApiExampleState extends State<AsyncApiExample> {
                   ),
                 );
               },
+              progressIndicatorBuilder: (context, isLoading) {
+                if (!isLoading) return const SizedBox.shrink();
+                return const LinearProgressIndicator(minHeight: 2);
+              },
               searchConfig: const SearchConfiguration(
                 hintText: 'Search users...',
                 padding: EdgeInsets.all(16.0),
@@ -716,7 +720,7 @@ class _AsyncApiExampleState extends State<AsyncApiExample> {
                 );
                 // Note: refresh is handled automatically by the controller
               },
-              errorBuilder: (context, error, retry) {
+              errorStateBuilder: (context, error, retry) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1115,7 +1119,7 @@ class _EmptyStatesExampleState extends State<EmptyStatesExample> {
                 hintText: 'Try searching for "xyz" with data present...',
                 padding: EdgeInsets.all(16.0),
               ),
-              emptyBuilder: (context) {
+              emptyStateBuilder: (context) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1142,7 +1146,7 @@ class _EmptyStatesExampleState extends State<EmptyStatesExample> {
                   ),
                 );
               },
-              emptySearchBuilder: (context, searchQuery) {
+              emptySearchStateBuilder: (context, searchQuery) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1332,7 +1336,7 @@ class _AdvancedConfigExampleState extends State<AdvancedConfigExample> {
                 caseSensitive: _caseSensitive,
                 minSearchLength: _minSearchLength,
               ),
-              loadingBuilder: (context) {
+              loadingStateBuilder: (context) {
                 return const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1344,7 +1348,7 @@ class _AdvancedConfigExampleState extends State<AdvancedConfigExample> {
                   ),
                 );
               },
-              errorBuilder: (context, error, retry) {
+              errorStateBuilder: (context, error, retry) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1406,11 +1410,31 @@ class _MultiSelectExampleState extends State<MultiSelectExample> {
   // 50 items so we have enough to scroll off-screen
   final _items = List.generate(50, (i) {
     const names = [
-      'Apple', 'Banana', 'Cherry', 'Date', 'Elderberry',
-      'Fig', 'Grape', 'Honeydew', 'Kiwi', 'Lemon',
-      'Mango', 'Nectarine', 'Orange', 'Papaya', 'Quince',
-      'Raspberry', 'Strawberry', 'Tangerine', 'Watermelon', 'Zucchini',
-      'Artichoke', 'Broccoli', 'Carrot', 'Daikon', 'Endive',
+      'Apple',
+      'Banana',
+      'Cherry',
+      'Date',
+      'Elderberry',
+      'Fig',
+      'Grape',
+      'Honeydew',
+      'Kiwi',
+      'Lemon',
+      'Mango',
+      'Nectarine',
+      'Orange',
+      'Papaya',
+      'Quince',
+      'Raspberry',
+      'Strawberry',
+      'Tangerine',
+      'Watermelon',
+      'Zucchini',
+      'Artichoke',
+      'Broccoli',
+      'Carrot',
+      'Daikon',
+      'Endive',
     ];
     return '${names[i % names.length]} ${i + 1}';
   });
@@ -1505,30 +1529,150 @@ class GroupedListExample extends StatelessWidget {
 
   static final _products = [
     // Electronics (4 items)
-    Product(id: '1', name: 'MacBook Pro', price: 2499.0, category: 'Electronics', inStock: true, rating: 4.8),
-    Product(id: '2', name: 'iPhone 15', price: 999.0, category: 'Electronics', inStock: true, rating: 4.7),
-    Product(id: '3', name: 'AirPods Pro', price: 249.0, category: 'Electronics', inStock: false, rating: 4.5),
-    Product(id: '4', name: 'Samsung Galaxy', price: 899.0, category: 'Electronics', inStock: true, rating: 4.6),
+    Product(
+        id: '1',
+        name: 'MacBook Pro',
+        price: 2499.0,
+        category: 'Electronics',
+        inStock: true,
+        rating: 4.8),
+    Product(
+        id: '2',
+        name: 'iPhone 15',
+        price: 999.0,
+        category: 'Electronics',
+        inStock: true,
+        rating: 4.7),
+    Product(
+        id: '3',
+        name: 'AirPods Pro',
+        price: 249.0,
+        category: 'Electronics',
+        inStock: false,
+        rating: 4.5),
+    Product(
+        id: '4',
+        name: 'Samsung Galaxy',
+        price: 899.0,
+        category: 'Electronics',
+        inStock: true,
+        rating: 4.6),
     // Sports (4 items)
-    Product(id: '5', name: 'Running Shoes', price: 129.0, category: 'Sports', inStock: true, rating: 4.3),
-    Product(id: '6', name: 'Yoga Mat', price: 49.0, category: 'Sports', inStock: true, rating: 4.6),
-    Product(id: '7', name: 'Water Bottle', price: 25.0, category: 'Sports', inStock: true, rating: 4.2),
-    Product(id: '8', name: 'Tennis Racket', price: 189.0, category: 'Sports', inStock: false, rating: 4.4),
+    Product(
+        id: '5',
+        name: 'Running Shoes',
+        price: 129.0,
+        category: 'Sports',
+        inStock: true,
+        rating: 4.3),
+    Product(
+        id: '6',
+        name: 'Yoga Mat',
+        price: 49.0,
+        category: 'Sports',
+        inStock: true,
+        rating: 4.6),
+    Product(
+        id: '7',
+        name: 'Water Bottle',
+        price: 25.0,
+        category: 'Sports',
+        inStock: true,
+        rating: 4.2),
+    Product(
+        id: '8',
+        name: 'Tennis Racket',
+        price: 189.0,
+        category: 'Sports',
+        inStock: false,
+        rating: 4.4),
     // Books (4 items)
-    Product(id: '9', name: 'The Great Gatsby', price: 12.0, category: 'Books', inStock: true, rating: 4.4),
-    Product(id: '10', name: 'Italian Kitchen', price: 29.0, category: 'Books', inStock: false, rating: 4.1),
-    Product(id: '11', name: 'Flutter in Action', price: 39.0, category: 'Books', inStock: true, rating: 4.9),
-    Product(id: '12', name: 'Clean Code', price: 34.0, category: 'Books', inStock: true, rating: 4.7),
+    Product(
+        id: '9',
+        name: 'The Great Gatsby',
+        price: 12.0,
+        category: 'Books',
+        inStock: true,
+        rating: 4.4),
+    Product(
+        id: '10',
+        name: 'Italian Kitchen',
+        price: 29.0,
+        category: 'Books',
+        inStock: false,
+        rating: 4.1),
+    Product(
+        id: '11',
+        name: 'Flutter in Action',
+        price: 39.0,
+        category: 'Books',
+        inStock: true,
+        rating: 4.9),
+    Product(
+        id: '12',
+        name: 'Clean Code',
+        price: 34.0,
+        category: 'Books',
+        inStock: true,
+        rating: 4.7),
     // Clothing (4 items)
-    Product(id: '13', name: 'T-Shirt', price: 19.0, category: 'Clothing', inStock: true, rating: 4.0),
-    Product(id: '14', name: 'Jeans', price: 59.0, category: 'Clothing', inStock: true, rating: 4.3),
-    Product(id: '15', name: 'Hoodie', price: 45.0, category: 'Clothing', inStock: true, rating: 4.5),
-    Product(id: '16', name: 'Sneakers', price: 99.0, category: 'Clothing', inStock: false, rating: 4.2),
+    Product(
+        id: '13',
+        name: 'T-Shirt',
+        price: 19.0,
+        category: 'Clothing',
+        inStock: true,
+        rating: 4.0),
+    Product(
+        id: '14',
+        name: 'Jeans',
+        price: 59.0,
+        category: 'Clothing',
+        inStock: true,
+        rating: 4.3),
+    Product(
+        id: '15',
+        name: 'Hoodie',
+        price: 45.0,
+        category: 'Clothing',
+        inStock: true,
+        rating: 4.5),
+    Product(
+        id: '16',
+        name: 'Sneakers',
+        price: 99.0,
+        category: 'Clothing',
+        inStock: false,
+        rating: 4.2),
     // Home (4 items)
-    Product(id: '17', name: 'Desk Lamp', price: 35.0, category: 'Home', inStock: true, rating: 4.1),
-    Product(id: '18', name: 'Plant Pot', price: 15.0, category: 'Home', inStock: true, rating: 4.0),
-    Product(id: '19', name: 'Wall Clock', price: 28.0, category: 'Home', inStock: true, rating: 4.3),
-    Product(id: '20', name: 'Throw Pillow', price: 22.0, category: 'Home', inStock: false, rating: 3.9),
+    Product(
+        id: '17',
+        name: 'Desk Lamp',
+        price: 35.0,
+        category: 'Home',
+        inStock: true,
+        rating: 4.1),
+    Product(
+        id: '18',
+        name: 'Plant Pot',
+        price: 15.0,
+        category: 'Home',
+        inStock: true,
+        rating: 4.0),
+    Product(
+        id: '19',
+        name: 'Wall Clock',
+        price: 28.0,
+        category: 'Home',
+        inStock: true,
+        rating: 4.3),
+    Product(
+        id: '20',
+        name: 'Throw Pillow',
+        price: 22.0,
+        category: 'Home',
+        inStock: false,
+        rating: 3.9),
   ];
 
   @override
@@ -1541,7 +1685,8 @@ class GroupedListExample extends StatelessWidget {
         itemBuilder: (context, product, index, {searchTerms = const []}) {
           return ListTile(
             title: Text(product.name),
-            subtitle: Text('${product.category} - \$${product.price.toStringAsFixed(2)}'),
+            subtitle: Text(
+                '${product.category} - \$${product.price.toStringAsFixed(2)}'),
             trailing: product.inStock
                 ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
                 : const Icon(Icons.cancel, color: Colors.red, size: 20),
@@ -1582,30 +1727,60 @@ class _GroupedSliverExampleState extends State<GroupedSliverExample> {
   // Reuse the same products but more items per group for scroll testing
   static final _products = [
     // Electronics
-    ...List.generate(8, (i) => Product(
-      id: 'e$i', name: 'Electronic Item ${i + 1}', price: 100.0 + i * 50,
-      category: 'Electronics', inStock: i % 3 != 0, rating: 4.0 + i * 0.1,
-    )),
+    ...List.generate(
+        8,
+        (i) => Product(
+              id: 'e$i',
+              name: 'Electronic Item ${i + 1}',
+              price: 100.0 + i * 50,
+              category: 'Electronics',
+              inStock: i % 3 != 0,
+              rating: 4.0 + i * 0.1,
+            )),
     // Sports
-    ...List.generate(8, (i) => Product(
-      id: 's$i', name: 'Sports Item ${i + 1}', price: 20.0 + i * 15,
-      category: 'Sports', inStock: i % 2 == 0, rating: 3.8 + i * 0.15,
-    )),
+    ...List.generate(
+        8,
+        (i) => Product(
+              id: 's$i',
+              name: 'Sports Item ${i + 1}',
+              price: 20.0 + i * 15,
+              category: 'Sports',
+              inStock: i % 2 == 0,
+              rating: 3.8 + i * 0.15,
+            )),
     // Books
-    ...List.generate(8, (i) => Product(
-      id: 'b$i', name: 'Book Title ${i + 1}', price: 10.0 + i * 5,
-      category: 'Books', inStock: true, rating: 4.2 + i * 0.05,
-    )),
+    ...List.generate(
+        8,
+        (i) => Product(
+              id: 'b$i',
+              name: 'Book Title ${i + 1}',
+              price: 10.0 + i * 5,
+              category: 'Books',
+              inStock: true,
+              rating: 4.2 + i * 0.05,
+            )),
     // Clothing
-    ...List.generate(8, (i) => Product(
-      id: 'c$i', name: 'Clothing Item ${i + 1}', price: 15.0 + i * 10,
-      category: 'Clothing', inStock: i % 4 != 0, rating: 3.9 + i * 0.1,
-    )),
+    ...List.generate(
+        8,
+        (i) => Product(
+              id: 'c$i',
+              name: 'Clothing Item ${i + 1}',
+              price: 15.0 + i * 10,
+              category: 'Clothing',
+              inStock: i % 4 != 0,
+              rating: 3.9 + i * 0.1,
+            )),
     // Home
-    ...List.generate(8, (i) => Product(
-      id: 'h$i', name: 'Home Item ${i + 1}', price: 8.0 + i * 12,
-      category: 'Home', inStock: i % 3 == 0, rating: 4.0 + i * 0.08,
-    )),
+    ...List.generate(
+        8,
+        (i) => Product(
+              id: 'h$i',
+              name: 'Home Item ${i + 1}',
+              price: 8.0 + i * 12,
+              category: 'Home',
+              inStock: i % 3 == 0,
+              rating: 4.0 + i * 0.08,
+            )),
   ];
 
   @override
@@ -1663,8 +1838,8 @@ class _GroupedSliverExampleState extends State<GroupedSliverExample> {
                 SliverSmartSearchList<Product>(
                   controller: _controller,
                   searchableFields: (p) => [p.name, p.category],
-                  itemBuilder:
-                      (context, product, index, {searchTerms = const []}) {
+                  itemBuilder: (context, product, index,
+                      {searchTerms = const []}) {
                     return ListTile(
                       title: Text(product.name),
                       subtitle: Text(
@@ -1710,13 +1885,39 @@ class _SearchTriggerModeExampleState extends State<SearchTriggerModeExample> {
   SearchTriggerMode _mode = SearchTriggerMode.onEdit;
 
   final _fruits = [
-    'Apple', 'Apricot', 'Avocado', 'Banana', 'Blackberry',
-    'Blueberry', 'Cherry', 'Coconut', 'Cranberry', 'Date',
-    'Elderberry', 'Fig', 'Grape', 'Guava', 'Honeydew',
-    'Kiwi', 'Lemon', 'Lime', 'Lychee', 'Mango',
-    'Nectarine', 'Orange', 'Papaya', 'Peach', 'Pear',
-    'Pineapple', 'Plum', 'Pomegranate', 'Quince', 'Raspberry',
-    'Strawberry', 'Tangerine', 'Watermelon',
+    'Apple',
+    'Apricot',
+    'Avocado',
+    'Banana',
+    'Blackberry',
+    'Blueberry',
+    'Cherry',
+    'Coconut',
+    'Cranberry',
+    'Date',
+    'Elderberry',
+    'Fig',
+    'Grape',
+    'Guava',
+    'Honeydew',
+    'Kiwi',
+    'Lemon',
+    'Lime',
+    'Lychee',
+    'Mango',
+    'Nectarine',
+    'Orange',
+    'Papaya',
+    'Peach',
+    'Pear',
+    'Pineapple',
+    'Plum',
+    'Pomegranate',
+    'Quince',
+    'Raspberry',
+    'Strawberry',
+    'Tangerine',
+    'Watermelon',
   ];
 
   @override

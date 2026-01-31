@@ -29,3 +29,17 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 /build/
 /coverage/
+
+# Example app - regenerable platform folders and generated files
+# Run "flutter create ." inside example/ to regenerate
+example/.metadata
+example/README.md
+example/analysis_options.yaml
+example/pubspec.lock
+example/android/
+example/ios/
+example/linux/
+example/macos/
+example/web/
+example/windows/
+example/test/

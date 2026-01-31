@@ -39,10 +39,10 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
   final SmartSearchController<T>? controller;
 
   /// Builder functions for customization
-  final LoadingBuilder? loadingBuilder;
-  final ErrorBuilder? errorBuilder;
-  final EmptyBuilder? emptyBuilder;
-  final EmptySearchBuilder? emptySearchBuilder;
+  final LoadingStateBuilder? loadingStateBuilder;
+  final ErrorStateBuilder? errorStateBuilder;
+  final EmptyStateBuilder? emptyStateBuilder;
+  final EmptySearchStateBuilder? emptySearchStateBuilder;
 
   /// Configuration objects
   final SearchConfiguration searchConfig;
@@ -84,10 +84,10 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
     required this.searchableFields,
     required this.itemBuilder,
     this.controller,
-    this.loadingBuilder,
-    this.errorBuilder,
-    this.emptyBuilder,
-    this.emptySearchBuilder,
+    this.loadingStateBuilder,
+    this.errorStateBuilder,
+    this.emptyStateBuilder,
+    this.emptySearchStateBuilder,
     this.searchConfig = const SearchConfiguration(),
     this.listConfig = const ListConfiguration(),
     this.paginationConfig,
@@ -102,7 +102,7 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
     this.groupHeaderBuilder,
     this.groupComparator,
     this.groupHeaderExtent = 48.0,
-  }) : assert(
+  })  : assert(
           items == null || asyncLoader == null,
           'Provide either items OR asyncLoader, not both',
         ),
@@ -196,7 +196,7 @@ class _SliverSmartSearchListState<T extends Object>
     // Handle loading state (initial load)
     if (_controller.isLoading && _controller.items.isEmpty) {
       return SliverFillRemaining(
-        child: widget.loadingBuilder?.call(context) ??
+        child: widget.loadingStateBuilder?.call(context) ??
             const DefaultLoadingWidget(),
       );
     }
@@ -204,7 +204,7 @@ class _SliverSmartSearchListState<T extends Object>
     // Handle error state
     if (_controller.error != null) {
       return SliverFillRemaining(
-        child: widget.errorBuilder?.call(
+        child: widget.errorStateBuilder?.call(
               context,
               _controller.error!,
               () => _controller.retry(),
@@ -221,7 +221,7 @@ class _SliverSmartSearchListState<T extends Object>
       // User searched but found nothing
       if (_controller.hasSearched && _controller.searchQuery.isNotEmpty) {
         return SliverFillRemaining(
-          child: widget.emptySearchBuilder?.call(
+          child: widget.emptySearchStateBuilder?.call(
                 context,
                 _controller.searchQuery,
               ) ??
@@ -233,8 +233,8 @@ class _SliverSmartSearchListState<T extends Object>
       // Initial empty state (no data)
       else {
         return SliverFillRemaining(
-          child:
-              widget.emptyBuilder?.call(context) ?? const DefaultEmptyWidget(),
+          child: widget.emptyStateBuilder?.call(context) ??
+              const DefaultEmptyWidget(),
         );
       }
     }
@@ -297,8 +297,8 @@ class _SliverSmartSearchListState<T extends Object>
               delegate: _GroupHeaderDelegate(
                 maxExtent: widget.groupHeaderExtent,
                 minExtent: widget.groupHeaderExtent,
-                child: widget.groupHeaderBuilder?.call(
-                        context, key, groupItems.length) ??
+                child: widget.groupHeaderBuilder
+                        ?.call(context, key, groupItems.length) ??
                     DefaultGroupHeader(
                         groupValue: key, itemCount: groupItems.length),
               ),

@@ -83,21 +83,33 @@ typedef ItemBuilder<T> = Widget Function(
 /// Builder function for separators
 typedef SeparatorBuilder = Widget Function(BuildContext context, int index);
 
-/// Builder function for loading state
-typedef LoadingBuilder = Widget Function(BuildContext context);
+/// Builder for the full-screen loading state shown when data is first loading
+/// and no items exist yet.
+///
+/// This replaces the entire list area. For an inline indicator (e.g., a thin
+/// progress bar shown while items already exist), see [ProgressIndicatorBuilder].
+typedef LoadingStateBuilder = Widget Function(BuildContext context);
 
-/// Builder function for error state
-typedef ErrorBuilder = Widget Function(
+/// Builder for the full-screen error state shown when an async operation fails.
+///
+/// This replaces the entire list area with an error message and retry action.
+typedef ErrorStateBuilder = Widget Function(
   BuildContext context,
   Object error,
   VoidCallback onRetry,
 );
 
-/// Builder function for empty state (no data)
-typedef EmptyBuilder = Widget Function(BuildContext context);
+/// Builder for the full-screen empty state shown when no data exists.
+///
+/// This replaces the entire list area. For empty search results (data exists
+/// but nothing matches the query), see [EmptySearchStateBuilder].
+typedef EmptyStateBuilder = Widget Function(BuildContext context);
 
-/// Builder function for empty search results
-typedef EmptySearchBuilder = Widget Function(
+/// Builder for the full-screen empty state shown when a search returns no results.
+///
+/// This replaces the entire list area. Unlike [EmptyStateBuilder] (no data at all),
+/// this is shown when data exists but the current search query matches nothing.
+typedef EmptySearchStateBuilder = Widget Function(
   BuildContext context,
   String searchQuery,
 );
@@ -118,6 +130,27 @@ typedef GroupHeaderBuilder = Widget Function(
   BuildContext context,
   Object groupValue,
   int itemCount,
+);
+
+/// Builder for an inline progress indicator shown during async operations.
+///
+/// Unlike [LoadingStateBuilder] which replaces the entire list when no items
+/// exist, this builder is always rendered (between the search field and list
+/// content) and receives the current loading state. Use it to show a thin
+/// progress bar, shimmer, or any visual indicator while data is being fetched.
+///
+/// Return [SizedBox.shrink] when [isLoading] is false to hide the indicator.
+///
+/// Example:
+/// ```dart
+/// progressIndicatorBuilder: (context, isLoading) {
+///   if (!isLoading) return const SizedBox.shrink();
+///   return const LinearProgressIndicator();
+/// },
+/// ```
+typedef ProgressIndicatorBuilder = Widget Function(
+  BuildContext context,
+  bool isLoading,
 );
 
 /// Builder function for filter controls
