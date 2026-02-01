@@ -145,6 +145,8 @@ class _SliverSmartSearchListState<T extends Object>
         caseSensitive: widget.searchConfig.caseSensitive,
         minSearchLength: widget.searchConfig.minSearchLength,
         pageSize: widget.paginationConfig?.pageSize ?? 20,
+        fuzzySearchEnabled: widget.searchConfig.fuzzySearchEnabled,
+        fuzzyThreshold: widget.searchConfig.fuzzyThreshold,
       );
       _controllerCreatedInternally = true;
     }
@@ -191,6 +193,10 @@ class _SliverSmartSearchListState<T extends Object>
   Widget build(BuildContext context) {
     return _buildSliver();
   }
+
+  /// Compute search terms once per build for highlighting
+  List<String> get _searchTerms =>
+      _controller.searchQuery.split(' ').where((s) => s.isNotEmpty).toList();
 
   Widget _buildSliver() {
     // Handle loading state (initial load)
@@ -342,7 +348,12 @@ class _SliverSmartSearchListState<T extends Object>
 
     final item = _controller.items[index];
 
-    Widget itemWidget = widget.itemBuilder(context, item, index);
+    Widget itemWidget = widget.itemBuilder(
+      context,
+      item,
+      index,
+      searchTerms: _searchTerms,
+    );
 
     // Wrap with selection checkbox if enabled
     if (widget.selectionConfig != null && widget.selectionConfig!.enabled) {

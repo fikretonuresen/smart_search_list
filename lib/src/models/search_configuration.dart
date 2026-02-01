@@ -217,6 +217,27 @@ class SearchConfiguration {
   /// [SearchTriggerMode.onSubmit]: search only on explicit submit action.
   final SearchTriggerMode triggerMode;
 
+  /// Whether fuzzy (subsequence) matching is enabled for offline search.
+  ///
+  /// When true, items that contain the query characters in order (but not
+  /// necessarily consecutively) are included in results. Results are ranked
+  /// by match quality — exact substring matches always score highest.
+  ///
+  /// Only affects offline mode. Async loaders handle their own matching.
+  ///
+  /// Defaults to `false`.
+  final bool fuzzySearchEnabled;
+
+  /// Minimum score (0.0 – 1.0) a fuzzy match must reach to be included.
+  ///
+  /// Lower values return more results (more lenient).
+  /// Higher values return fewer, tighter matches.
+  ///
+  /// Has no effect when [fuzzySearchEnabled] is `false`.
+  ///
+  /// Defaults to `0.3`.
+  final double fuzzyThreshold;
+
   const SearchConfiguration({
     this.enabled = true,
     this.autofocus = false,
@@ -231,7 +252,12 @@ class SearchConfiguration {
     this.padding = const EdgeInsets.all(16.0),
     this.decoration,
     this.triggerMode = SearchTriggerMode.onEdit,
-  });
+    this.fuzzySearchEnabled = false,
+    this.fuzzyThreshold = 0.3,
+  }) : assert(
+          fuzzyThreshold >= 0.0 && fuzzyThreshold <= 1.0,
+          'fuzzyThreshold must be between 0.0 and 1.0',
+        );
 
   /// Create a copy with modified values
   SearchConfiguration copyWith({
@@ -248,6 +274,8 @@ class SearchConfiguration {
     EdgeInsets? padding,
     InputDecoration? decoration,
     SearchTriggerMode? triggerMode,
+    bool? fuzzySearchEnabled,
+    double? fuzzyThreshold,
   }) {
     return SearchConfiguration(
       enabled: enabled ?? this.enabled,
@@ -264,6 +292,8 @@ class SearchConfiguration {
       padding: padding ?? this.padding,
       decoration: decoration ?? this.decoration,
       triggerMode: triggerMode ?? this.triggerMode,
+      fuzzySearchEnabled: fuzzySearchEnabled ?? this.fuzzySearchEnabled,
+      fuzzyThreshold: fuzzyThreshold ?? this.fuzzyThreshold,
     );
   }
 }

@@ -1,3 +1,44 @@
+## 0.4.0
+
+🔍 **Fuzzy Search** - Typo-tolerant search with scored ranking and built-in highlight widget.
+
+### ✨ New Features
+- **Fuzzy Search**: Zero-dependency 3-phase matching algorithm for offline lists
+  - **Phase 1 — Exact substring** (score 1.0): standard `indexOf` fast path
+  - **Phase 2 — Ordered subsequence** (score 0.01–0.99): handles missing characters ("apl" → "Apple", "bnna" → "Banana") with consecutive-run scoring
+  - **Phase 3 — Bounded Levenshtein** (score 0.01–0.59): handles extra/wrong characters and transpositions ("apole" → "Apple", "appel" → "Apple") with `maxEditDistance = 2`
+  - Score-and-sort pipeline: exact matches always rank first, fuzzy matches scored by consecutive runs, density, position, and word boundaries
+  - Configurable via `SearchConfiguration.fuzzySearchEnabled` (default: `false`) and `SearchConfiguration.fuzzyThreshold` (default: `0.3`)
+- **SearchHighlightText Widget**: Built-in widget for highlighting matched characters
+  - Works with both exact substring and fuzzy matching
+  - Accepts `text` + `searchTerms`, renders highlighted `TextSpan`
+  - Customizable `matchStyle`, `highlightColor`, `maxLines`, `overflow`
+- **FuzzyMatcher**: Public utility class for custom fuzzy matching
+  - `FuzzyMatcher.match(query, text)` — returns score + match indices
+  - `FuzzyMatcher.matchFields(query, fields)` — best score across multiple fields
+  - `FuzzyMatchResult` with score and `matchIndices` for highlighting
+
+### 🔧 API Changes
+- `SearchConfiguration` gains `fuzzySearchEnabled` and `fuzzyThreshold` parameters
+- `SmartSearchController` gains `fuzzySearchEnabled`, `fuzzyThreshold` fields and `updateFuzzySearchEnabled()`, `updateFuzzyThreshold()` methods
+- New export: `FuzzyMatcher`, `FuzzyMatchResult`, `SearchHighlightText`
+
+### ⚠️ Performance Note
+- Fuzzy search (especially Phase 3) is computationally heavier than plain substring search
+- For lists > 5,000 items, test performance on target devices or increase `fuzzyThreshold` to `0.6+` to skip expensive edit-distance matches
+- Subsequence matching (Phase 2) is O(m+n) per item and fast for any list size
+- Edit-distance fallback (Phase 3) only runs when Phases 1 and 2 fail — gibberish queries are rejected quickly by length and ratio guards
+
+### 🎨 Example Updates
+- New **Fuzzy Search** example: toggle fuzzy on/off, adjust threshold, SearchHighlightText demo
+
+### ⚡ Backward Compatibility
+- All new parameters are optional with sensible defaults
+- Fuzzy search is opt-in (`fuzzySearchEnabled: false` by default)
+- Existing code continues to work without modifications
+
+---
+
 ## 0.3.0
 
 🔄 **Progress Indicator Builder** - Inline loading feedback for async operations.
@@ -8,6 +49,9 @@
   - Unlike `loadingStateBuilder` (which replaces the entire list), this renders alongside existing content
   - Receives `(BuildContext context, bool isLoading)` — return `SizedBox.shrink()` when not loading
 - New `ProgressIndicatorBuilder` typedef
+
+### 🐛 Bug Fixes
+- **Sliver searchTerms fix**: `SliverSmartSearchList` now correctly forwards `searchTerms` to `itemBuilder` in grouped mode — previously, items inside grouped slivers received empty search terms, breaking highlighting
 
 ### 🔧 Improvements
 - Cleaned up package description and documentation tone
@@ -109,7 +153,7 @@ Find-and-replace in your code:
 
 ## 0.1.0
 
-🧪 **Initial testing release** - A searchable list package designed to be better than `searchable_listview`. Ready for production testing and feedback.
+🧪 **Initial testing release** - A high-performance, zero-dependency searchable list package for Flutter. Ready for production testing and feedback.
 
 > **Note**: This is a testing release. The package is technically solid but needs real-world validation. Please test in your apps and provide feedback before we publish the stable 1.0.0 version.
 

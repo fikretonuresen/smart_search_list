@@ -55,7 +55,8 @@ void main() {
     });
 
     test('selectWhere selects items matching predicate', () {
-      controller.selectWhere((item) => item.startsWith('B') || item.startsWith('C'));
+      controller
+          .selectWhere((item) => item.startsWith('B') || item.startsWith('C'));
       expect(controller.selectedItems.length, 2);
       expect(controller.isSelected('Banana'), true);
       expect(controller.isSelected('Cherry'), true);

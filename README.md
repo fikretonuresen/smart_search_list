@@ -25,6 +25,7 @@ A highly performant, customizable Flutter package for searchable lists with zero
 - 📂 **Grouped Lists** - Group items into sections with headers via a `groupBy` function
 - 🎯 **Search Trigger Modes** - Choose between live search (onEdit) or submit-based search (onSubmit)
 - 🔄 **Loading Indicator Builder** - Inline loading feedback (shimmer, progress bar) during async operations
+- 🔍 **Fuzzy Search** - Typo-tolerant matching with scored ranking (opt-in)
 - 🔧 **Zero Dependencies** - Only uses Flutter SDK
 
 ## 📦 Installation
@@ -35,7 +36,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  smart_search_list: ^0.3.0
+  smart_search_list: ^0.4.0
 ```
 
 ## 🚀 Quick Start
@@ -332,6 +333,82 @@ SmartSearchList<T>(
   // ...
 )
 ```
+
+## 🔍 Smart Fuzzy Search
+
+Enable typo-tolerant search with a single flag. The algorithm uses a **3-phase cascading pipeline** — no external dependencies:
+
+1. **Exact Substring** (score 1.0) — `"app"` finds `"Apple"` instantly
+2. **Ordered Subsequence** (score 0.01–0.99) — `"apl"` finds `"Apple"` (missing characters)
+3. **Typo Tolerance** (score 0.01–0.59) — `"apole"` finds `"Apple"` (extra/wrong characters, max 2 edits)
+
+Results are **scored and sorted** — exact matches always rank first, strong fuzzy matches next, weak matches last.
+
+### Enable Fuzzy Search
+
+```dart
+SmartSearchList<String>(
+  items: ['Apple', 'Banana', 'Cherry', 'Grape', 'Orange'],
+  searchableFields: (item) => [item],
+  itemBuilder: (context, item, index, {searchTerms = const []}) {
+    return ListTile(title: Text(item));
+  },
+  searchConfig: const SearchConfiguration(
+    fuzzySearchEnabled: true,
+    fuzzyThreshold: 0.3, // 0.0 = accept everything, 1.0 = exact only
+  ),
+)
+```
+
+### SearchHighlightText Widget
+
+Built-in widget that highlights matched characters — works with both exact and fuzzy modes:
+
+```dart
+SearchHighlightText(
+  text: 'Apple Juice',
+  searchTerms: ['apl'],
+  fuzzySearchEnabled: true,
+  matchStyle: const TextStyle(fontWeight: FontWeight.bold),
+  highlightColor: Colors.yellow.withValues(alpha: 0.3),
+  maxLines: 1,
+  overflow: TextOverflow.ellipsis,
+)
+```
+
+### Using FuzzyMatcher Directly
+
+The matching engine is exposed as a public utility for custom use cases:
+
+```dart
+final result = FuzzyMatcher.match('aple', 'Apple');
+if (result != null) {
+  print(result.score);        // 0.01–1.0
+  print(result.matchIndices);  // character positions for highlighting
+}
+
+// Match against multiple fields (returns best score)
+final best = FuzzyMatcher.matchFields('apl', ['Banana', 'Apple', 'Cherry']);
+```
+
+### Threshold Tuning Guide
+
+| Threshold | Behavior |
+|-----------|----------|
+| `0.1` | Very lenient — shows most fuzzy matches including weak ones |
+| `0.3` | **Default** — good balance for most use cases |
+| `0.5` | Moderate — filters out edit-distance matches, keeps good subsequences |
+| `0.6+` | Strict — effectively disables typo tolerance, only exact and strong subsequence |
+| `1.0` | Exact substring matches only |
+
+### ⚠️ Performance Note
+
+Fuzzy search is computationally heavier than plain substring matching. For lists exceeding **5,000 items**, we recommend:
+- Testing performance on your target devices
+- Increasing `fuzzyThreshold` to `0.6+` to skip the expensive edit-distance phase
+- Using `SearchTriggerMode.onSubmit` instead of live search to reduce search frequency
+
+The subsequence phase (Phase 2) is O(m+n) and fast for any list size. The edit-distance fallback (Phase 3) only runs when Phases 1 and 2 fail, and gibberish queries are rejected quickly by length and ratio guards.
 
 ## 📊 Performance
 

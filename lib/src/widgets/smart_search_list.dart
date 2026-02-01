@@ -161,6 +161,8 @@ class _SmartSearchListState<T extends Object>
         caseSensitive: widget.searchConfig.caseSensitive,
         minSearchLength: widget.searchConfig.minSearchLength,
         pageSize: widget.paginationConfig?.pageSize ?? 20,
+        fuzzySearchEnabled: widget.searchConfig.fuzzySearchEnabled,
+        fuzzyThreshold: widget.searchConfig.fuzzyThreshold,
       );
       _controllerCreatedInternally = true;
     }

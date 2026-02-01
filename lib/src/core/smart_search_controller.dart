@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'fuzzy_utils.dart';
 
 /// Controller for managing search, filter, sort, and pagination state
 ///
@@ -25,6 +26,8 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     this.caseSensitive = false,
     this.minSearchLength = 0,
     this.pageSize = 20,
+    this.fuzzySearchEnabled = false,
+    this.fuzzyThreshold = 0.3,
   });
 
   /// Delay for search debouncing
@@ -47,6 +50,12 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
   /// Page size for pagination
   final int pageSize;
+
+  /// Whether fuzzy (subsequence) matching is enabled for offline search
+  bool fuzzySearchEnabled;
+
+  /// Minimum score (0.0 – 1.0) for fuzzy matches to be included
+  double fuzzyThreshold;
 
   // Internal state
   List<T> _allItems = [];
@@ -321,29 +330,59 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
     List<T> filtered = List.from(_allItems);
 
-    // Apply search
-    if (_searchQuery.isNotEmpty) {
-      final query = caseSensitive ? _searchQuery : _searchQuery.toLowerCase();
-      filtered = filtered.where((item) {
-        final searchableTexts = searchableFields(item);
-        return searchableTexts.any((text) {
-          final searchText = caseSensitive ? text : text.toLowerCase();
-          return searchText.contains(query);
-        });
-      }).toList();
-    }
-
-    // Apply filters
+    // Apply filters first (reduces the set before expensive search).
     for (final filter in _activeFilters.entries) {
       filtered = filtered.where(filter.value).toList();
     }
 
-    // Apply sort
+    // Apply search
+    if (_searchQuery.isNotEmpty) {
+      if (fuzzySearchEnabled) {
+        filtered = _fuzzySearch(filtered);
+      } else {
+        final query = caseSensitive ? _searchQuery : _searchQuery.toLowerCase();
+        filtered = filtered.where((item) {
+          final searchableTexts = searchableFields(item);
+          return searchableTexts.any((text) {
+            final searchText = caseSensitive ? text : text.toLowerCase();
+            return searchText.contains(query);
+          });
+        }).toList();
+      }
+    }
+
+    // Apply user sort (overrides fuzzy relevance sort when set).
     if (_currentComparator != null) {
       filtered.sort(_currentComparator!);
     }
 
     _filteredItems = filtered;
+  }
+
+  /// Score, filter, and rank items using fuzzy subsequence matching.
+  ///
+  /// Items are sorted descending by best match score. Exact substring
+  /// matches always score 1.0 and appear first.
+  List<T> _fuzzySearch(List<T> items) {
+    final threshold = fuzzyThreshold;
+    final scored = <_ScoredItem<T>>[];
+
+    for (final item in items) {
+      final fields = searchableFields(item);
+      final result = FuzzyMatcher.matchFields(
+        _searchQuery,
+        fields,
+        caseSensitive: caseSensitive,
+      );
+      if (result != null && result.score >= threshold) {
+        scored.add(_ScoredItem(item, result.score));
+      }
+    }
+
+    // Sort descending by score (highest first).
+    scored.sort((a, b) => b.score.compareTo(a.score));
+
+    return scored.map((s) => s.item).toList();
   }
 
   /// Add a filter
@@ -482,6 +521,33 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
+  /// Update fuzzy search enabled state and re-search if needed
+  void updateFuzzySearchEnabled(bool value) {
+    if (_isDisposed || fuzzySearchEnabled == value) return;
+
+    fuzzySearchEnabled = value;
+    _clearCache();
+
+    if (_searchQuery.isNotEmpty) {
+      _performSearch(_searchQuery);
+    } else if (_allItems.isNotEmpty) {
+      _applyFiltersAndSort();
+      _notifyListeners();
+    }
+  }
+
+  /// Update fuzzy threshold and re-search if needed
+  void updateFuzzyThreshold(double value) {
+    if (_isDisposed || fuzzyThreshold == value) return;
+
+    fuzzyThreshold = value;
+    _clearCache();
+
+    if (_searchQuery.isNotEmpty) {
+      _performSearch(_searchQuery);
+    }
+  }
+
   @override
   void dispose() {
     _isDisposed = true;
@@ -490,4 +556,11 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _clearCache();
     super.dispose();
   }
+}
+
+/// Internal helper for sorting items by fuzzy match score.
+class _ScoredItem<T> {
+  final T item;
+  final double score;
+  const _ScoredItem(this.item, this.score);
 }
