@@ -227,59 +227,8 @@ void main() {
     });
   });
 
-  group('SmartSearchList live region', () {
-    testWidgets('live region is present when semantics enabled',
-        (tester) async {
-      final handle = tester.ensureSemantics();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SmartSearchList<String>(
-              items: const ['Apple', 'Banana', 'Cherry'],
-              searchableFields: (item) => [item],
-              itemBuilder: (context, item, index, {searchTerms = const []}) =>
-                  ListTile(title: Text(item)),
-            ),
-          ),
-        ),
-      );
-
-      // Find the live region Semantics widget
-      final liveRegion = find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.liveRegion == true,
-      );
-      expect(liveRegion, findsOneWidget);
-
-      handle.dispose();
-    });
-
-    testWidgets('live region is absent when semantics disabled',
-        (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SmartSearchList<String>(
-              items: const ['Apple', 'Banana', 'Cherry'],
-              searchableFields: (item) => [item],
-              itemBuilder: (context, item, index, {searchTerms = const []}) =>
-                  ListTile(title: Text(item)),
-              accessibilityConfig: const AccessibilityConfiguration(
-                searchSemanticsEnabled: false,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final liveRegion = find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.liveRegion == true,
-      );
-      expect(liveRegion, findsNothing);
-    });
-
-    testWidgets('live region announces result count after search',
-        (tester) async {
+  group('SmartSearchList announcements', () {
+    testWidgets('announces result count after search', (tester) async {
       final handle = tester.ensureSemantics();
 
       await tester.pumpWidget(
@@ -298,24 +247,22 @@ void main() {
         ),
       );
 
+      // Clear any initial announcements
+      tester.takeAnnouncements();
+
       // Type a search query
       await tester.enterText(find.byType(TextField), 'App');
       await tester.pump(const Duration(milliseconds: 20));
       await tester.pump();
 
-      // Find the live region and check its label
-      final liveRegion = find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.liveRegion == true,
-      );
-      expect(liveRegion, findsOneWidget);
-
-      final semanticsWidget = tester.widget<Semantics>(liveRegion);
-      expect(semanticsWidget.properties.label, '1 result found');
+      final announcements = tester.takeAnnouncements();
+      expect(announcements, isNotEmpty);
+      expect(announcements.last.message, '1 result found');
 
       handle.dispose();
     });
 
-    testWidgets('live region uses custom announcement builder', (tester) async {
+    testWidgets('uses custom announcement builder', (tester) async {
       final handle = tester.ensureSemantics();
 
       await tester.pumpWidget(
@@ -337,22 +284,20 @@ void main() {
         ),
       );
 
-      // Type a search query
+      tester.takeAnnouncements();
+
       await tester.enterText(find.byType(TextField), 'App');
       await tester.pump(const Duration(milliseconds: 20));
       await tester.pump();
 
-      final liveRegion = find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.liveRegion == true,
-      );
-      final semanticsWidget = tester.widget<Semantics>(liveRegion);
-      expect(semanticsWidget.properties.label, '1 Ergebnis');
+      final announcements = tester.takeAnnouncements();
+      expect(announcements, isNotEmpty);
+      expect(announcements.last.message, '1 Ergebnis');
 
       handle.dispose();
     });
 
-    testWidgets('live region shows empty message for zero results',
-        (tester) async {
+    testWidgets('announces zero results', (tester) async {
       final handle = tester.ensureSemantics();
 
       await tester.pumpWidget(
@@ -371,18 +316,47 @@ void main() {
         ),
       );
 
-      // Search for something that doesn't exist
+      tester.takeAnnouncements();
+
       await tester.enterText(find.byType(TextField), 'xyz');
       await tester.pump(const Duration(milliseconds: 20));
       await tester.pump();
 
-      final liveRegion = find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.liveRegion == true,
-      );
-      final semanticsWidget = tester.widget<Semantics>(liveRegion);
-      expect(semanticsWidget.properties.label, 'No results found');
+      final announcements = tester.takeAnnouncements();
+      expect(announcements, isNotEmpty);
+      expect(announcements.last.message, 'No results found');
 
       handle.dispose();
+    });
+
+    testWidgets('no announcements when semantics disabled', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SmartSearchList<String>(
+              items: const ['Apple', 'Banana', 'Cherry'],
+              searchableFields: (item) => [item],
+              searchConfig: const SearchConfiguration(
+                debounceDelay: Duration(milliseconds: 10),
+              ),
+              accessibilityConfig: const AccessibilityConfiguration(
+                searchSemanticsEnabled: false,
+              ),
+              itemBuilder: (context, item, index, {searchTerms = const []}) =>
+                  ListTile(title: Text(item)),
+            ),
+          ),
+        ),
+      );
+
+      tester.takeAnnouncements();
+
+      await tester.enterText(find.byType(TextField), 'App');
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.pump();
+
+      final announcements = tester.takeAnnouncements();
+      expect(announcements, isEmpty);
     });
   });
 
@@ -467,9 +441,6 @@ void main() {
       // The sliver renders items correctly with accessibility enabled
       expect(find.text('Apple'), findsOneWidget);
       expect(find.text('Banana'), findsOneWidget);
-
-      // The outer SliverMainAxisGroup wraps the live region + list
-      expect(find.byType(SliverMainAxisGroup), findsOneWidget);
 
       handle.dispose();
     });

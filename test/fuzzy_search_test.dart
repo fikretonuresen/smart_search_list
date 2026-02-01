@@ -351,8 +351,7 @@ void main() {
     });
 
     test('fuzzy match across fields picks highest score', () {
-      final r =
-          FuzzyMatcher.matchFields('apl', ['Banana', 'Apple', 'Apology']);
+      final r = FuzzyMatcher.matchFields('apl', ['Banana', 'Apple', 'Apology']);
       expect(r, isNotNull);
       // "Apple" should score higher (tighter match) than "Apology"
     });

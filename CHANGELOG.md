@@ -1,3 +1,20 @@
+## 0.5.1
+
+🔧 **Improved Screen Reader Announcements** - More reliable TalkBack/VoiceOver support.
+
+### 🔧 Improvements
+- **Screen reader announcements**: Replaced `Semantics(liveRegion: true)` with `SemanticsService.sendAnnouncement()` for more reliable TalkBack and VoiceOver feedback
+- **Removed live region widget**: Result count announcements no longer require an extra `SizedBox` in the widget tree
+
+### 📋 Requirements
+- Minimum Flutter version bumped from 3.13.0 to **3.35.0** (required for `SemanticsService.sendAnnouncement`)
+
+### ⚡ Backward Compatibility
+- No public API changes — all parameters and behavior remain the same
+- Existing code continues to work without modifications on Flutter 3.35+
+
+---
+
 ## 0.5.0
 
 ♿ **Accessibility** - TalkBack/VoiceOver support with full localization control.

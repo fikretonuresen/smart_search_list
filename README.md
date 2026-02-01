@@ -30,7 +30,7 @@ A highly performant, customizable Flutter package for searchable lists with zero
 
 ## 📦 Installation
 
-Requires **Flutter 3.13.0** or higher.
+Requires **Flutter 3.35.0** or higher.
 
 Add to your `pubspec.yaml`:
 
@@ -412,7 +412,7 @@ The subsequence phase (Phase 2) is O(m+n) and fast for any list size. The edit-d
 
 ## ♿ Accessibility & Localization
 
-Smart Search List is **TalkBack and VoiceOver ready** out of the box. Default widgets include semantic labels, tooltips, and header annotations. Result count changes are announced via live regions — compatible with Android 16+ (which deprecated imperative announcements).
+Smart Search List is **TalkBack and VoiceOver ready** out of the box. Default widgets include semantic labels, tooltips, and header annotations. Result count changes are announced via `SemanticsService.sendAnnouncement()` for reliable screen reader feedback.
 
 ### AccessibilityConfiguration
 
@@ -443,7 +443,7 @@ SmartSearchList<String>(
 - **Clear button**: Tooltip (`'Clear search'` or custom)
 - **Search button**: Tooltip (`'Search'` or custom) in `onSubmit` mode
 - **Group headers**: Marked as `Semantics(header: true)` for screen reader navigation
-- **Result announcements**: Live region announces count changes after debounce settles
+- **Result announcements**: Screen reader announces result count changes after search settles
 - **Opt-out**: Set `searchSemanticsEnabled: false` to disable all automatic semantics
 
 ### Disabling accessibility features

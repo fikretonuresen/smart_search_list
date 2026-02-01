@@ -1,6 +1,6 @@
 /// Configuration for accessibility and screen reader behavior.
 ///
-/// Controls semantic labels, live region announcements, and other
+/// Controls semantic labels, screen reader announcements, and other
 /// assistive technology features.
 ///
 /// Example:
@@ -23,7 +23,7 @@ class AccessibilityConfiguration {
   /// and result announcements.
   ///
   /// When true (default), the package adds semantic labels to the search
-  /// field and uses a live region to announce result count changes.
+  /// field and announces result count changes to screen readers.
   ///
   /// Set to false if you handle all accessibility in your own builders.
   final bool searchSemanticsEnabled;
@@ -39,8 +39,8 @@ class AccessibilityConfiguration {
   /// Builds the announcement string for result count changes.
   ///
   /// Called whenever the filtered result count changes after a search
-  /// settles. The returned string is placed in a live region so screen
-  /// readers announce it automatically.
+  /// settles. The returned string is announced to screen readers via
+  /// `SemanticsService.sendAnnouncement()`.
   ///
   /// If null, defaults to `'$count results found'`.
   ///

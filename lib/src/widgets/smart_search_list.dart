@@ -90,7 +90,7 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
 
   /// Accessibility configuration for screen reader semantics.
   ///
-  /// Controls semantic labels on the search field and live region
+  /// Controls semantic labels on the search field and screen reader announcements
   /// announcements when result counts change.
   final AccessibilityConfiguration accessibilityConfig;
 
@@ -147,8 +147,7 @@ class _SmartSearchListState<T extends Object>
   bool _isDisposed = false;
   bool _controllerCreatedInternally = false;
 
-  /// Tracks the last result count announced by the live region to avoid
-  /// duplicate announcements when the widget rebuilds without a count change.
+  /// Tracks the last result count announced to avoid duplicate announcements.
   int? _lastAnnouncedCount;
 
   @override
@@ -198,6 +197,11 @@ class _SmartSearchListState<T extends Object>
 
     // Setup search text listener
     _searchTextController.addListener(_onSearchTextChanged);
+
+    // Setup accessibility announcement listener
+    if (widget.accessibilityConfig.searchSemanticsEnabled) {
+      _controller.addListener(_onControllerChangedForAnnouncement);
+    }
 
     // Initialize data
     _initializeData();
@@ -272,6 +276,7 @@ class _SmartSearchListState<T extends Object>
     _isDisposed = true;
 
     // Remove listeners
+    _controller.removeListener(_onControllerChangedForAnnouncement);
     _searchTextController.removeListener(_onSearchTextChanged);
 
     if (widget.scrollController == null) {
@@ -316,10 +321,6 @@ class _SmartSearchListState<T extends Object>
                 _controller.isLoading || _controller.isLoadingMore,
               ),
 
-            // Live region for screen reader result count announcements
-            if (widget.accessibilityConfig.searchSemanticsEnabled)
-              _buildLiveRegion(),
-
             // Sort and filter controls
             if (widget.sortBuilder != null || widget.filterBuilder != null)
               _buildControls(),
@@ -354,35 +355,28 @@ class _SmartSearchListState<T extends Object>
     );
   }
 
-  /// Builds a zero-size live region widget that announces result count
-  /// changes to screen readers (TalkBack / VoiceOver).
-  ///
-  /// The announcement text only updates when the count actually changes,
-  /// preventing chatter while the user is still typing.
-  Widget _buildLiveRegion() {
+  /// Announces result count changes to screen readers via
+  /// [SemanticsService.sendAnnouncement]. Called from the controller listener
+  /// so it fires after search/filter operations settle.
+  void _onControllerChangedForAnnouncement() {
+    if (_isDisposed) return;
+
     final count = _controller.items.length;
     final isSearchActive = _controller.hasSearched && !_controller.isLoading;
 
-    // Only update announcement when count changes and search has settled
-    String announcement;
-    if (!isSearchActive) {
-      // Not searching yet or still loading — don't announce
-      announcement = '';
-    } else if (count != _lastAnnouncedCount) {
-      _lastAnnouncedCount = count;
-      announcement = widget.accessibilityConfig.buildResultsAnnouncement(count);
-    } else {
-      // Count hasn't changed — keep the same text to avoid re-announcement
-      announcement = widget.accessibilityConfig.buildResultsAnnouncement(count);
-    }
+    if (!isSearchActive || count == _lastAnnouncedCount) return;
 
-    // SizedBox.shrink makes this invisible. The Semantics liveRegion
-    // triggers a screen reader announcement when the label text changes.
-    return Semantics(
-      liveRegion: true,
-      label: announcement,
-      child: const SizedBox.shrink(),
-    );
+    _lastAnnouncedCount = count;
+    final message = widget.accessibilityConfig.buildResultsAnnouncement(count);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_isDisposed || !mounted) return;
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        message,
+        Directionality.of(context),
+      );
+    });
   }
 
   Widget _buildControls() {

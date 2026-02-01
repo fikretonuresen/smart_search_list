@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import '../core/smart_search_controller.dart';
 import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
@@ -160,6 +161,11 @@ class _SliverSmartSearchListState<T extends Object>
     // Listen to controller changes
     _controller.addListener(_onControllerChanged);
 
+    // Setup accessibility announcement listener
+    if (widget.accessibilityConfig.searchSemanticsEnabled) {
+      _controller.addListener(_onControllerChangedForAnnouncement);
+    }
+
     // Initialize data
     _initializeData();
   }
@@ -186,6 +192,7 @@ class _SliverSmartSearchListState<T extends Object>
   @override
   void dispose() {
     _isDisposed = true;
+    _controller.removeListener(_onControllerChangedForAnnouncement);
     _controller.removeListener(_onControllerChanged);
 
     if (_controllerCreatedInternally) {
@@ -251,41 +258,30 @@ class _SliverSmartSearchListState<T extends Object>
       }
     }
 
-    // Build the main list with optional live region
-    final listSliver =
-        widget.groupBy != null ? _buildGroupedSlivers() : _buildSliverList();
-
-    if (!widget.accessibilityConfig.searchSemanticsEnabled) {
-      return listSliver;
-    }
-
-    return SliverMainAxisGroup(
-      slivers: [
-        SliverToBoxAdapter(child: _buildLiveRegion()),
-        listSliver,
-      ],
-    );
+    return widget.groupBy != null ? _buildGroupedSlivers() : _buildSliverList();
   }
 
-  Widget _buildLiveRegion() {
+  /// Announces result count changes to screen readers via
+  /// [SemanticsService.sendAnnouncement].
+  void _onControllerChangedForAnnouncement() {
+    if (_isDisposed) return;
+
     final count = _controller.items.length;
     final isSearchActive = _controller.hasSearched && !_controller.isLoading;
 
-    String announcement;
-    if (!isSearchActive) {
-      announcement = '';
-    } else if (count != _lastAnnouncedCount) {
-      _lastAnnouncedCount = count;
-      announcement = widget.accessibilityConfig.buildResultsAnnouncement(count);
-    } else {
-      announcement = widget.accessibilityConfig.buildResultsAnnouncement(count);
-    }
+    if (!isSearchActive || count == _lastAnnouncedCount) return;
 
-    return Semantics(
-      liveRegion: true,
-      label: announcement,
-      child: const SizedBox.shrink(),
-    );
+    _lastAnnouncedCount = count;
+    final message = widget.accessibilityConfig.buildResultsAnnouncement(count);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_isDisposed || !mounted) return;
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        message,
+        Directionality.of(context),
+      );
+    });
   }
 
   Widget _buildSliverList() {
