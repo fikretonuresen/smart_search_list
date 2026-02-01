@@ -1,3 +1,33 @@
+## 0.5.0
+
+♿ **Accessibility** - TalkBack/VoiceOver support with full localization control.
+
+### ✨ New Features
+- **AccessibilityConfiguration**: New configuration class for semantic labels and screen reader behavior
+  - `searchFieldLabel` — custom label for the search text field
+  - `clearButtonLabel` — custom tooltip for the clear button (default: `'Clear search'`)
+  - `searchButtonLabel` — custom tooltip for the search button in onSubmit mode (default: `'Search'`)
+  - `resultsAnnouncementBuilder` — customizable announcement text for result count changes (supports localization)
+  - `searchSemanticsEnabled` — opt-out flag to disable all automatic semantics
+- **Live Region Announcements**: Result count changes are announced to screen readers via `Semantics(liveRegion: true)` — compatible with Android 16+ (which deprecated imperative `SemanticsService.announce`)
+- **Semantic Headers**: `DefaultGroupHeader` now includes `Semantics(header: true)` for proper screen reader navigation
+- **Icon Tooltips**: Clear and search `IconButton`s in `DefaultSearchField` now have tooltips for assistive technology
+
+### 🔧 API Changes
+- `SmartSearchList` gains `accessibilityConfig` parameter (default: `const AccessibilityConfiguration()`)
+- `SliverSmartSearchList` gains `accessibilityConfig` parameter
+- `DefaultSearchField` gains `accessibilityConfig` parameter
+- New export: `AccessibilityConfiguration`
+
+### 🎨 Example Updates
+- New **Accessibility** example: demonstrates localized labels and custom announcement text
+
+### ⚡ Backward Compatibility
+- All new parameters are optional with sensible defaults
+- Existing code continues to work without modifications
+
+---
+
 ## 0.4.0
 
 🔍 **Fuzzy Search** - Typo-tolerant search with scored ranking and built-in highlight widget.

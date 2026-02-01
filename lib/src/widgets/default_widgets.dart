@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
 
 /// Default search field widget
@@ -14,6 +15,9 @@ class DefaultSearchField extends StatelessWidget {
   /// Only wired when [SearchTriggerMode.onSubmit] is active.
   final ValueChanged<String>? onSubmitted;
 
+  /// Accessibility configuration for semantic labels and tooltips.
+  final AccessibilityConfiguration accessibilityConfig;
+
   const DefaultSearchField({
     super.key,
     required this.controller,
@@ -21,6 +25,7 @@ class DefaultSearchField extends StatelessWidget {
     required this.configuration,
     required this.onClear,
     this.onSubmitted,
+    this.accessibilityConfig = const AccessibilityConfiguration(),
   });
 
   @override
@@ -41,6 +46,7 @@ class DefaultSearchField extends StatelessWidget {
             suffixChildren.add(
               IconButton(
                 icon: const Icon(Icons.search),
+                tooltip: accessibilityConfig.searchButtonLabel ?? 'Search',
                 onPressed: () => onSubmitted?.call(controller.text),
               ),
             );
@@ -50,6 +56,7 @@ class DefaultSearchField extends StatelessWidget {
             suffixChildren.add(
               IconButton(
                 icon: const Icon(Icons.clear),
+                tooltip: accessibilityConfig.clearButtonLabel ?? 'Clear search',
                 onPressed: onClear,
               ),
             );
@@ -64,6 +71,28 @@ class DefaultSearchField extends StatelessWidget {
             );
           }
 
+          // Build the base decoration
+          final effectiveDecoration = configuration.decoration ??
+              InputDecoration(
+                hintText: configuration.hintText,
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: suffixIcon,
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+              );
+
+          // Apply semantic label if provided
+          final decorationWithLabel =
+              accessibilityConfig.searchFieldLabel != null &&
+                      configuration.decoration == null
+                  ? effectiveDecoration.copyWith(
+                      labelText: accessibilityConfig.searchFieldLabel,
+                    )
+                  : effectiveDecoration;
+
           return TextField(
             controller: controller,
             focusNode: focusNode,
@@ -73,17 +102,7 @@ class DefaultSearchField extends StatelessWidget {
                 ? TextInputAction.search
                 : configuration.textInputAction,
             onSubmitted: isSubmitMode ? onSubmitted : null,
-            decoration: configuration.decoration ??
-                InputDecoration(
-                  hintText: configuration.hintText,
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: suffixIcon,
-                  border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                ),
+            decoration: decorationWithLabel,
           );
         },
       ),
@@ -266,15 +285,18 @@ class DefaultGroupHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Text(
-        '$groupValue ($itemCount)',
-        style: theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.onSurfaceVariant,
+    return Semantics(
+      header: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        color: theme.colorScheme.surfaceContainerHighest,
+        child: Text(
+          '$groupValue ($itemCount)',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );

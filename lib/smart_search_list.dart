@@ -3,5 +3,6 @@ export 'src/widgets/sliver_smart_search_list.dart';
 export 'src/core/smart_search_controller.dart';
 export 'src/core/fuzzy_utils.dart';
 export 'src/models/search_configuration.dart';
+export 'src/models/accessibility_configuration.dart';
 export 'src/widgets/default_widgets.dart';
 export 'src/widgets/search_highlight_text.dart';

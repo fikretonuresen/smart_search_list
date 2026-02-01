@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/smart_search_controller.dart';
+import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
 import 'default_widgets.dart';
 
@@ -77,6 +78,9 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
   /// Maximum extent for sticky group headers (default: 48.0)
   final double groupHeaderExtent;
 
+  /// Accessibility configuration for screen reader semantics.
+  final AccessibilityConfiguration accessibilityConfig;
+
   const SliverSmartSearchList({
     super.key,
     this.items,
@@ -102,6 +106,7 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
     this.groupHeaderBuilder,
     this.groupComparator,
     this.groupHeaderExtent = 48.0,
+    this.accessibilityConfig = const AccessibilityConfiguration(),
   })  : assert(
           items == null || asyncLoader == null,
           'Provide either items OR asyncLoader, not both',
@@ -122,6 +127,7 @@ class _SliverSmartSearchListState<T extends Object>
 
   bool _isDisposed = false;
   bool _controllerCreatedInternally = false;
+  int? _lastAnnouncedCount;
 
   @override
   void initState() {
@@ -245,11 +251,41 @@ class _SliverSmartSearchListState<T extends Object>
       }
     }
 
-    // Build the main list
-    if (widget.groupBy != null) {
-      return _buildGroupedSlivers();
+    // Build the main list with optional live region
+    final listSliver =
+        widget.groupBy != null ? _buildGroupedSlivers() : _buildSliverList();
+
+    if (!widget.accessibilityConfig.searchSemanticsEnabled) {
+      return listSliver;
     }
-    return _buildSliverList();
+
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(child: _buildLiveRegion()),
+        listSliver,
+      ],
+    );
+  }
+
+  Widget _buildLiveRegion() {
+    final count = _controller.items.length;
+    final isSearchActive = _controller.hasSearched && !_controller.isLoading;
+
+    String announcement;
+    if (!isSearchActive) {
+      announcement = '';
+    } else if (count != _lastAnnouncedCount) {
+      _lastAnnouncedCount = count;
+      announcement = widget.accessibilityConfig.buildResultsAnnouncement(count);
+    } else {
+      announcement = widget.accessibilityConfig.buildResultsAnnouncement(count);
+    }
+
+    return Semantics(
+      liveRegion: true,
+      label: announcement,
+      child: const SizedBox.shrink(),
+    );
   }
 
   Widget _buildSliverList() {

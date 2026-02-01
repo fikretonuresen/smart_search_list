@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../core/smart_search_controller.dart';
+import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
 import 'default_widgets.dart';
 
@@ -87,6 +88,12 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
   /// Comparator for ordering groups. If null, groups appear in insertion order.
   final Comparator<Object>? groupComparator;
 
+  /// Accessibility configuration for screen reader semantics.
+  ///
+  /// Controls semantic labels on the search field and live region
+  /// announcements when result counts change.
+  final AccessibilityConfiguration accessibilityConfig;
+
   const SmartSearchList({
     super.key,
     this.items,
@@ -118,6 +125,7 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
     this.groupBy,
     this.groupHeaderBuilder,
     this.groupComparator,
+    this.accessibilityConfig = const AccessibilityConfiguration(),
   }) : assert(
           controller != null ||
               ((items != null && asyncLoader == null) ||
@@ -138,6 +146,10 @@ class _SmartSearchListState<T extends Object>
 
   bool _isDisposed = false;
   bool _controllerCreatedInternally = false;
+
+  /// Tracks the last result count announced by the live region to avoid
+  /// duplicate announcements when the widget rebuilds without a count change.
+  int? _lastAnnouncedCount;
 
   @override
   void initState() {
@@ -304,6 +316,10 @@ class _SmartSearchListState<T extends Object>
                 _controller.isLoading || _controller.isLoadingMore,
               ),
 
+            // Live region for screen reader result count announcements
+            if (widget.accessibilityConfig.searchSemanticsEnabled)
+              _buildLiveRegion(),
+
             // Sort and filter controls
             if (widget.sortBuilder != null || widget.filterBuilder != null)
               _buildControls(),
@@ -334,6 +350,38 @@ class _SmartSearchListState<T extends Object>
       onSubmitted: widget.searchConfig.triggerMode == SearchTriggerMode.onSubmit
           ? _onSearchSubmitted
           : null,
+      accessibilityConfig: widget.accessibilityConfig,
+    );
+  }
+
+  /// Builds a zero-size live region widget that announces result count
+  /// changes to screen readers (TalkBack / VoiceOver).
+  ///
+  /// The announcement text only updates when the count actually changes,
+  /// preventing chatter while the user is still typing.
+  Widget _buildLiveRegion() {
+    final count = _controller.items.length;
+    final isSearchActive = _controller.hasSearched && !_controller.isLoading;
+
+    // Only update announcement when count changes and search has settled
+    String announcement;
+    if (!isSearchActive) {
+      // Not searching yet or still loading — don't announce
+      announcement = '';
+    } else if (count != _lastAnnouncedCount) {
+      _lastAnnouncedCount = count;
+      announcement = widget.accessibilityConfig.buildResultsAnnouncement(count);
+    } else {
+      // Count hasn't changed — keep the same text to avoid re-announcement
+      announcement = widget.accessibilityConfig.buildResultsAnnouncement(count);
+    }
+
+    // SizedBox.shrink makes this invisible. The Semantics liveRegion
+    // triggers a screen reader announcement when the label text changes.
+    return Semantics(
+      liveRegion: true,
+      label: announcement,
+      child: const SizedBox.shrink(),
     );
   }
 

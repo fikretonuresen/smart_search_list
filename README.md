@@ -36,7 +36,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  smart_search_list: ^0.4.0
+  smart_search_list: ^0.5.0
 ```
 
 ## 🚀 Quick Start
@@ -409,6 +409,55 @@ Fuzzy search is computationally heavier than plain substring matching. For lists
 - Using `SearchTriggerMode.onSubmit` instead of live search to reduce search frequency
 
 The subsequence phase (Phase 2) is O(m+n) and fast for any list size. The edit-distance fallback (Phase 3) only runs when Phases 1 and 2 fail, and gibberish queries are rejected quickly by length and ratio guards.
+
+## ♿ Accessibility & Localization
+
+Smart Search List is **TalkBack and VoiceOver ready** out of the box. Default widgets include semantic labels, tooltips, and header annotations. Result count changes are announced via live regions — compatible with Android 16+ (which deprecated imperative announcements).
+
+### AccessibilityConfiguration
+
+Customize all labels for localization or branding:
+
+```dart
+SmartSearchList<String>(
+  items: fruits,
+  searchableFields: (item) => [item],
+  itemBuilder: (context, item, index, {searchTerms = const []}) {
+    return ListTile(title: Text(item));
+  },
+  accessibilityConfig: AccessibilityConfiguration(
+    searchFieldLabel: 'Buscar frutas',
+    clearButtonLabel: 'Borrar busqueda',
+    searchButtonLabel: 'Buscar',
+    resultsAnnouncementBuilder: (count) {
+      if (count == 0) return 'Sin resultados';
+      return '$count resultados encontrados';
+    },
+  ),
+)
+```
+
+### What's included by default
+
+- **Search field**: Semantic label from `searchFieldLabel` or hint text
+- **Clear button**: Tooltip (`'Clear search'` or custom)
+- **Search button**: Tooltip (`'Search'` or custom) in `onSubmit` mode
+- **Group headers**: Marked as `Semantics(header: true)` for screen reader navigation
+- **Result announcements**: Live region announces count changes after debounce settles
+- **Opt-out**: Set `searchSemanticsEnabled: false` to disable all automatic semantics
+
+### Disabling accessibility features
+
+If you handle accessibility entirely in your own builders:
+
+```dart
+SmartSearchList<T>(
+  accessibilityConfig: const AccessibilityConfiguration(
+    searchSemanticsEnabled: false,
+  ),
+  // ...
+)
+```
 
 ## 📊 Performance
 
