@@ -1,4 +1,33 @@
-## 0.6.0
+## 0.6.1 - 2026-02-10
+
+📖 **Dartdoc Overhaul, Bug Fixes & Sliver Tests** - Publication-ready documentation, 3 code bug fixes, and comprehensive SliverSmartSearchList test coverage.
+
+### 🐛 Bug Fixes
+- **`RichText` → `Text.rich`**: `SearchHighlightText` now uses `Text.rich` for proper `SelectionArea` participation and `textScaler` accessibility support
+- **Scroll listener leak**: `SmartSearchList` now always removes scroll listeners before disposal, not just for external controllers
+- **Controller swap safety**: `didUpdateWidget` in both widgets now correctly handles external→null and null→external controller transitions without dangling references
+- **Assertion consistency**: `SmartSearchList` constructor assertions now match `SliverSmartSearchList` — rejects `items` + `asyncLoader` simultaneously even when controller is provided
+- **`_searchTerms` performance**: `SliverSmartSearchList` now computes search terms once per build instead of once per item (O(1) vs O(n) string splits)
+
+### 📖 Documentation
+- **Complete dartdoc audit**: ~70 missing doc comments added across all public classes, methods, fields, and typedefs
+- **Effective Dart compliance**: Fragment summaries converted to complete sentences, third-person verb forms, redundant docs trimmed
+- **Cross-references**: Backtick-quoted class names converted to `[bracket refs]` with imports for clickable pub.dev links
+- **Behavioral docs**: Filter/sort async vs offline behavior clarified, `ItemBuilder.searchTerms` lifecycle documented
+- **Dartdoc sync**: Aligned `SliverSmartSearchList` docs with `SmartSearchList` — `asyncLoader` page/pageSize, `groupBy` hashCode warning, `accessibilityConfig` details
+- **CHANGELOG dates**: All version entries now include release dates
+
+### 🧪 Tests
+- **31 new `SliverSmartSearchList` tests**: rendering, search, grouped views, empty/error/loading states, `_searchTerms` caching, interactions, controller lifecycle, `didUpdateWidget`, async data, filtering, and sorting
+- **187 tests total** (up from 156), 0 analysis issues
+
+### ⚡ Backward Compatibility
+- No public API changes — all fixes are internal behavior and documentation
+- Existing code continues to work without modifications
+
+---
+
+## 0.6.0 - 2026-02-10
 
 🐛 **Bug Fixes & Widget Tests** - Widgets now react to prop changes, cache key correctness fix, and first widget-level test coverage.
 
@@ -15,7 +44,7 @@
 
 ---
 
-## 0.5.1
+## 0.5.1 - 2026-02-01
 
 🔧 **Improved Screen Reader Announcements** - More reliable TalkBack/VoiceOver support.
 
@@ -32,7 +61,7 @@
 
 ---
 
-## 0.5.0
+## 0.5.0 - 2026-02-01
 
 ♿ **Accessibility** - TalkBack/VoiceOver support with full localization control.
 
@@ -62,7 +91,7 @@
 
 ---
 
-## 0.4.0
+## 0.4.0 - 2026-02-01
 
 🔍 **Fuzzy Search** - Typo-tolerant search with scored ranking and built-in highlight widget.
 
@@ -103,7 +132,7 @@
 
 ---
 
-## 0.3.0
+## 0.3.0 - 2026-01-31
 
 🔄 **Progress Indicator Builder** - Inline loading feedback for async operations.
 
@@ -140,7 +169,7 @@ Find-and-replace in your code:
 
 ---
 
-## 0.2.0
+## 0.2.0 - 2026-01-31
 
 🎯 **Feature Release** - Multi-select, grouped lists, and search trigger modes.
 
@@ -185,7 +214,7 @@ Find-and-replace in your code:
 
 ---
 
-## 0.1.1
+## 0.1.1 - 2026-01-31
 
 🚀 **Enhanced Features Release** - Added search term highlighting support and below-search widget slot.
 
@@ -215,7 +244,7 @@ Find-and-replace in your code:
 
 ---
 
-## 0.1.0
+## 0.1.0 - 2026-01-31
 
 **Initial release** - A high-performance, zero-dependency searchable list package for Flutter. Ready for production testing and feedback.
 

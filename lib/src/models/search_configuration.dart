@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 
-/// Controls when search is triggered
+/// Controls when search is triggered.
 ///
 /// - [onEdit]: Search triggers on every text change (debounced). Default behavior.
 /// - [onSubmit]: Search triggers only when the user presses the keyboard
 ///   submit button or taps the search icon.
 enum SearchTriggerMode {
-  /// Search triggers on every text change, debounced by [SearchConfiguration.debounceDelay]
+  /// Search triggers on every text change, debounced by [SearchConfiguration.debounceDelay].
   onEdit,
 
-  /// Search triggers only on explicit submit (keyboard action or search button tap)
+  /// Search triggers only on explicit submit (keyboard action or search button tap).
   onSubmit,
 }
 
-/// Position of selection checkbox relative to item content
+/// Position of selection checkbox relative to item content.
 enum CheckboxPosition {
-  /// Checkbox appears before the item content
+  /// Checkbox appears before the item content.
   leading,
 
-  /// Checkbox appears after the item content
+  /// Checkbox appears after the item content.
   trailing,
 }
 
-/// Configuration for multi-select behavior
+/// Configuration for multi-select behavior.
 ///
 /// Example:
 /// ```dart
@@ -33,24 +33,25 @@ enum CheckboxPosition {
 /// )
 /// ```
 class SelectionConfiguration {
-  /// Whether multi-select is enabled
+  /// Whether multi-select is enabled.
   final bool enabled;
 
-  /// Whether to show a default checkbox for each item
+  /// Whether to show a default checkbox for each item.
   ///
-  /// Set to false if you handle selection visuals in your own [itemBuilder].
+  /// Set to false if you handle selection visuals in your own `itemBuilder`.
   final bool showCheckbox;
 
-  /// Position of the default checkbox
+  /// Position of the default checkbox.
   final CheckboxPosition position;
 
+  /// Creates a selection configuration.
   const SelectionConfiguration({
     this.enabled = true,
     this.showCheckbox = true,
     this.position = CheckboxPosition.leading,
   });
 
-  /// Create a copy with modified values
+  /// Returns a copy with the given fields replaced.
   SelectionConfiguration copyWith({
     bool? enabled,
     bool? showCheckbox,
@@ -64,7 +65,7 @@ class SelectionConfiguration {
   }
 }
 
-/// Builder function for custom search field
+/// Builder function for a custom search field.
 typedef SearchFieldBuilder =
     Widget Function(
       BuildContext context,
@@ -73,7 +74,21 @@ typedef SearchFieldBuilder =
       VoidCallback onClear,
     );
 
-/// Builder function for list items
+/// Builder function for list items.
+///
+/// The [searchTerms] parameter contains the individual words from the current
+/// search query, split by whitespace. For example, the query `"red apple"`
+/// produces `['red', 'apple']`. Pass these to [SearchHighlightText] or use
+/// them in your own highlighting logic.
+///
+/// **When [searchTerms] is empty:** The list is always `[]` (never `null`)
+/// when the search query is empty or contains only whitespace. This applies
+/// to both offline and async modes.
+///
+/// **When [searchTerms] is populated:** Contains one or more non-empty
+/// strings whenever the user has typed a search query. In async mode, the
+/// terms reflect the query string even though matching was handled by the
+/// async loader, so you can still use them for client-side highlighting.
 typedef ItemBuilder<T> =
     Widget Function(
       BuildContext context,
@@ -82,7 +97,7 @@ typedef ItemBuilder<T> =
       List<String> searchTerms,
     });
 
-/// Builder function for separators
+/// Builder function for separators.
 typedef SeparatorBuilder = Widget Function(BuildContext context, int index);
 
 /// Builder for the full-screen loading state shown when data is first loading
@@ -111,7 +126,7 @@ typedef EmptyStateBuilder = Widget Function(BuildContext context);
 typedef EmptySearchStateBuilder =
     Widget Function(BuildContext context, String searchQuery);
 
-/// Builder function for sort controls
+/// Builder function for sort controls.
 typedef SortBuilder<T> =
     Widget Function(
       BuildContext context,
@@ -119,7 +134,7 @@ typedef SortBuilder<T> =
       void Function(int Function(T, T)?) onSortChanged,
     );
 
-/// Builder function for group section headers
+/// Builder function for group section headers.
 ///
 /// Called for each group when [SmartSearchList.groupBy] is provided.
 /// [groupValue] is the value returned by the `groupBy` function.
@@ -146,7 +161,7 @@ typedef GroupHeaderBuilder =
 typedef ProgressIndicatorBuilder =
     Widget Function(BuildContext context, bool isLoading);
 
-/// Builder function for filter controls
+/// Builder function for filter controls.
 typedef FilterBuilder<T> =
     Widget Function(
       BuildContext context,
@@ -155,7 +170,7 @@ typedef FilterBuilder<T> =
       void Function(String key) onFilterRemoved,
     );
 
-/// Configuration for search behavior
+/// Configuration for search behavior.
 ///
 /// Controls search field appearance, debouncing, and interaction behavior.
 ///
@@ -169,43 +184,57 @@ typedef FilterBuilder<T> =
 /// )
 /// ```
 class SearchConfiguration {
-  /// Whether search is enabled
+  /// Whether the search field is visible in the UI.
+  ///
+  /// When `false`, the search text field is hidden but the underlying
+  /// controller continues to work normally. Data loading and filtering
+  /// still function; only the search UI is suppressed.
   final bool enabled;
 
-  /// Whether search field should autofocus
+  /// Whether the search field requests focus automatically when first built.
   final bool autofocus;
 
-  /// Whether to show clear button
+  /// Whether to show a clear button that resets the search query.
   final bool showClearButton;
 
-  /// Debounce delay for search
+  /// Duration to wait after the last keystroke before triggering a search.
+  ///
+  /// Prevents excessive searches during rapid typing. For async data
+  /// loaders, 300 ms or more is recommended.
   final Duration debounceDelay;
 
-  /// Hint text for search field
+  /// Placeholder text shown inside the search field when it is empty.
   final String hintText;
 
-  /// Text input type
+  /// Keyboard type shown to the user when the search field is focused.
   final TextInputType keyboardType;
 
-  /// Text input action
+  /// Action button displayed on the soft keyboard (e.g., "search", "done").
   final TextInputAction textInputAction;
 
-  /// Whether search is case sensitive
+  /// Whether search matching distinguishes between upper- and lower-case.
+  ///
+  /// Only affects offline mode. Async loaders handle casing themselves.
   final bool caseSensitive;
 
-  /// Whether to close keyboard on scroll
+  /// Whether scrolling the list dismisses the on-screen keyboard.
   final bool closeKeyboardOnScroll;
 
-  /// Minimum characters to trigger search
+  /// Number of characters the user must type before a search is executed.
+  ///
+  /// Useful for async loaders where very short queries are too broad.
+  /// A query shorter than this value is treated as empty.
   final int minSearchLength;
 
-  /// Padding around search field
+  /// Outer padding applied around the search field widget.
   final EdgeInsets padding;
 
-  /// Input decoration for search field
+  /// Custom [InputDecoration] applied to the search [TextField].
+  ///
+  /// When provided, this replaces the default decoration entirely.
   final InputDecoration? decoration;
 
-  /// Controls when search is triggered
+  /// Controls when search is triggered.
   ///
   /// [SearchTriggerMode.onEdit] (default): debounced search on every keystroke.
   /// [SearchTriggerMode.onSubmit]: search only on explicit submit action.
@@ -232,6 +261,9 @@ class SearchConfiguration {
   /// Defaults to `0.3`.
   final double fuzzyThreshold;
 
+  /// Creates a search configuration with the given options.
+  ///
+  /// All parameters are optional with sensible defaults.
   const SearchConfiguration({
     this.enabled = true,
     this.autofocus = false,
@@ -253,7 +285,7 @@ class SearchConfiguration {
          'fuzzyThreshold must be between 0.0 and 1.0',
        );
 
-  /// Create a copy with modified values
+  /// Returns a copy with the given fields replaced.
   SearchConfiguration copyWith({
     bool? enabled,
     bool? autofocus,
@@ -292,7 +324,7 @@ class SearchConfiguration {
   }
 }
 
-/// Configuration for list behavior
+/// Configuration for list behavior.
 ///
 /// Controls list appearance, scroll behavior, and interactions.
 ///
@@ -300,47 +332,64 @@ class SearchConfiguration {
 /// ```dart
 /// const ListConfiguration(
 ///   pullToRefresh: true,
-///   physics: BouncingScrollPhysics(),
+///   physics: const BouncingScrollPhysics(),
 ///   padding: EdgeInsets.all(16.0),
 /// )
 /// ```
 class ListConfiguration {
-  /// Whether pull-to-refresh is enabled
+  /// Whether the user can pull down on the list to trigger a data refresh.
   final bool pullToRefresh;
 
-  /// Scroll physics
+  /// Scroll physics applied to the list (e.g., [BouncingScrollPhysics]).
+  ///
+  /// When null, the platform default is used.
   final ScrollPhysics? physics;
 
-  /// Padding around the list
+  /// Padding inserted around the scrollable list content.
   final EdgeInsets? padding;
 
-  /// Whether list should shrink wrap
+  /// Whether the list should size itself to fit its children.
+  ///
+  /// When true, the list takes only as much vertical space as its content
+  /// requires. Avoid this for large datasets as it defeats lazy rendering.
   final bool shrinkWrap;
 
-  /// Whether list is reversed
+  /// Whether the list scrolls in the reverse reading direction.
   final bool reverse;
 
-  /// Scroll direction
+  /// The axis along which the list scrolls.
   final Axis scrollDirection;
 
-  /// Whether to add automatic keep alives
+  /// Whether to wrap each child in an [AutomaticKeepAlive] widget.
   final bool addAutomaticKeepAlives;
 
-  /// Whether to add repaint boundaries
+  /// Whether to wrap each child in a [RepaintBoundary].
   final bool addRepaintBoundaries;
 
-  /// Whether to add semantic indexes
+  /// Whether to wrap each child in an [IndexedSemantics] widget.
   final bool addSemanticIndexes;
 
-  /// Fixed item extent for better performance
+  /// Fixed height (or width, if horizontal) for every item, in logical pixels.
+  ///
+  /// Setting this allows the scroll machinery to skip per-child layout,
+  /// improving performance for large lists with uniform item sizes.
+  ///
+  /// Only takes effect when no `separatorBuilder` is provided, because
+  /// [ListView.separated] does not support `itemExtent`.
   final double? itemExtent;
 
-  /// Cache extent for off-screen items
+  /// Extra scroll extent to keep rendered beyond the visible viewport.
+  ///
+  /// Larger values pre-render more off-screen items, reducing pop-in at
+  /// the cost of memory. When null, the framework default is used.
   final double? cacheExtent;
 
-  /// Clip behavior
+  /// How to clip children that overflow the list bounds.
   final Clip clipBehavior;
 
+  /// Creates a list configuration.
+  ///
+  /// All parameters map to [ListView] properties with sensible defaults.
   const ListConfiguration({
     this.pullToRefresh = true,
     this.physics,
@@ -356,7 +405,7 @@ class ListConfiguration {
     this.clipBehavior = Clip.hardEdge,
   });
 
-  /// Create a copy with modified values
+  /// Returns a copy with the given fields replaced.
   ListConfiguration copyWith({
     bool? pullToRefresh,
     ScrollPhysics? physics,
@@ -389,7 +438,7 @@ class ListConfiguration {
   }
 }
 
-/// Configuration for pagination behavior
+/// Configuration for pagination behavior.
 ///
 /// Controls when and how additional pages are loaded.
 ///
@@ -402,25 +451,27 @@ class ListConfiguration {
 /// )
 /// ```
 class PaginationConfiguration {
-  /// Number of items per page
+  /// Number of items to request in each page load.
   final int pageSize;
 
-  /// Distance from bottom to trigger next page load
+  /// Scroll distance from the bottom edge, in logical pixels, at which
+  /// the next page load is triggered.
   final double triggerDistance;
 
-  /// Whether pagination is enabled
+  /// Whether automatic page loading on scroll is active.
   final bool enabled;
 
+  /// Creates a pagination configuration.
   const PaginationConfiguration({
     this.pageSize = 20,
     this.triggerDistance = 200.0,
     this.enabled = true,
   });
 
-  /// Validate configuration values
+  /// Whether this configuration has valid values.
   bool get isValid => pageSize > 0 && triggerDistance >= 0;
 
-  /// Create a copy with modified values
+  /// Returns a copy with the given fields replaced.
   PaginationConfiguration copyWith({
     int? pageSize,
     double? triggerDistance,

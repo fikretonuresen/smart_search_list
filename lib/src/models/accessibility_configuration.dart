@@ -14,7 +14,7 @@
 /// For localization, provide a custom [resultsAnnouncementBuilder]:
 /// ```dart
 /// // Turkish
-/// resultsAnnouncementBuilder: (count) => '$count sonuc bulundu',
+/// resultsAnnouncementBuilder: (count) => '$count sonuç bulundu',
 /// // German
 /// resultsAnnouncementBuilder: (count) => '$count Ergebnisse gefunden',
 /// ```
@@ -64,6 +64,9 @@ class AccessibilityConfiguration {
   /// If null, defaults to `'Search'`.
   final String? searchButtonLabel;
 
+  /// Creates an accessibility configuration with the given options.
+  ///
+  /// All parameters are optional with sensible defaults.
   const AccessibilityConfiguration({
     this.searchSemanticsEnabled = true,
     this.searchFieldLabel,
@@ -72,7 +75,7 @@ class AccessibilityConfiguration {
     this.searchButtonLabel,
   });
 
-  /// Default announcement text for the given result count.
+  /// Returns the announcement text for the given result [count].
   String buildResultsAnnouncement(int count) {
     if (resultsAnnouncementBuilder != null) {
       return resultsAnnouncementBuilder!(count);
@@ -82,7 +85,7 @@ class AccessibilityConfiguration {
     return '$count results found';
   }
 
-  /// Create a copy with modified values
+  /// Returns a copy with the given fields replaced.
   AccessibilityConfiguration copyWith({
     bool? searchSemanticsEnabled,
     String? searchFieldLabel,

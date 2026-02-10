@@ -4,11 +4,22 @@ import '../core/smart_search_controller.dart';
 import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
 import 'default_widgets.dart';
+import 'smart_search_list.dart';
 
-/// A sliver version of SmartSearchList for use in CustomScrollView
+/// A sliver version of [SmartSearchList] for use in [CustomScrollView].
 ///
-/// Provides the same search, filter, sort, and pagination capabilities
-/// but returns slivers for use in CustomScrollView.
+/// Emits slivers instead of managing its own scroll view, so it can be
+/// composed with other slivers (e.g. [SliverAppBar]) inside a
+/// [CustomScrollView].
+///
+/// Unlike [SmartSearchList], this widget does **not** include a built-in
+/// search field, sort/filter builders, separator builder, progress indicator
+/// builder, or scroll controller. The parent [CustomScrollView] (or a
+/// companion sliver) should provide the search input and drive the
+/// [SmartSearchController] externally.
+///
+/// Supports offline and async data sources, pagination, multi-select,
+/// grouped sticky headers, and accessibility announcements.
 ///
 /// Example:
 /// ```dart
@@ -18,56 +29,103 @@ import 'default_widgets.dart';
 ///     SliverSmartSearchList<String>(
 ///       items: ['Apple', 'Banana', 'Cherry'],
 ///       searchableFields: (item) => [item],
-///       itemBuilder: (context, item, index) => ListTile(title: Text(item)),
+///       itemBuilder: (context, item, index, {searchTerms = const []}) =>
+///           ListTile(title: Text(item)),
 ///     ),
 ///   ],
 /// )
 /// ```
 class SliverSmartSearchList<T extends Object> extends StatefulWidget {
-  /// Items for offline mode (provide either this OR asyncLoader)
+  /// Items for offline mode (provide either this OR asyncLoader).
   final List<T>? items;
 
-  /// Async data loader (provide either this OR items)
+  /// Async data loader (provide either this OR [items]).
+  ///
+  /// Called with an empty string on initial load — handle `''` as "load all".
+  /// The `page` parameter is **zero-indexed**: the first page is `0`, the
+  /// second is `1`, and so on. `pageSize` reflects the configured page size
+  /// (default 20).
   final Future<List<T>> Function(String query, {int page, int pageSize})?
   asyncLoader;
 
-  /// Function to extract searchable text from items
+  /// Function to extract searchable text from items.
   final List<String> Function(T item) searchableFields;
 
-  /// Required: Builder for list items
+  /// Builds each item in the list.
   final ItemBuilder<T> itemBuilder;
 
-  /// Optional: External controller
+  /// Optional external controller. When provided, you are responsible for
+  /// disposing it — the widget only disposes controllers it creates internally.
   final SmartSearchController<T>? controller;
 
-  /// Builder functions for customization
+  /// Builder for the loading state, displayed via [SliverFillRemaining]
+  /// to fill the remaining viewport space.
   final LoadingStateBuilder? loadingStateBuilder;
+
+  /// Builder for the error state, displayed via [SliverFillRemaining]
+  /// to fill the remaining viewport space.
   final ErrorStateBuilder? errorStateBuilder;
+
+  /// Builder for the empty state (no data), displayed via
+  /// [SliverFillRemaining] to fill the remaining viewport space.
   final EmptyStateBuilder? emptyStateBuilder;
+
+  /// Builder for the empty search state (no results), displayed via
+  /// [SliverFillRemaining] to fill the remaining viewport space.
   final EmptySearchStateBuilder? emptySearchStateBuilder;
 
-  /// Configuration objects
+  /// Search behavior configuration.
+  ///
+  /// Only behavioral properties (debounce, case sensitivity, min length, fuzzy
+  /// settings) are forwarded to the controller. UI properties like hintText,
+  /// decoration, and padding are ignored since this widget has no search field.
   final SearchConfiguration searchConfig;
+
+  /// List appearance configuration (scroll physics, padding, etc.).
   final ListConfiguration listConfig;
+
+  /// Pagination configuration. If null, pagination is disabled.
   final PaginationConfiguration? paginationConfig;
 
-  /// Callbacks
+  /// Called when a list item is tapped.
   final void Function(T item, int index)? onItemTap;
+
+  /// Called when the search query changes.
+  ///
+  /// **Note:** This callback is **not invoked** by [SliverSmartSearchList]
+  /// because this widget does not manage a search text field. To observe
+  /// query changes, listen to [SmartSearchController] directly instead.
+  /// The parameter is retained for API compatibility with [SmartSearchList].
   final void Function(String query)? onSearchChanged;
+
+  /// Called on pull-to-refresh.
+  ///
+  /// **Note:** This callback is **not invoked** by [SliverSmartSearchList]
+  /// because this widget does not include a [RefreshIndicator]. To support
+  /// pull-to-refresh in a [CustomScrollView], wrap the scroll view with a
+  /// [RefreshIndicator] yourself and call [SmartSearchController.refresh].
+  /// The parameter is retained for API compatibility with [SmartSearchList].
   final VoidCallback? onRefresh;
 
-  /// Performance options
+  /// Whether to cache async search results. Defaults to `true`.
   final bool cacheResults;
+
+  /// Maximum number of cached results. Defaults to `100`.
   final int maxCacheSize;
 
   /// Multi-select configuration. When non-null, multi-select mode is enabled.
   final SelectionConfiguration? selectionConfig;
 
-  /// Called when selection changes (multi-select mode)
+  /// Called when selection changes (multi-select mode).
   final void Function(Set<T> selectedItems)? onSelectionChanged;
 
   /// Groups items by the returned value. When non-null, items are displayed
-  /// in sections with sticky headers using SliverMainAxisGroup.
+  /// in sections with sticky headers using [SliverMainAxisGroup].
+  ///
+  /// The returned value is used as a [Map] key internally, so it must have
+  /// correct [Object.==] and [Object.hashCode] implementations. Built-in
+  /// types like [String] and [int] satisfy this. Custom objects must override
+  /// both operators to ensure consistent grouping.
   final Object Function(T item)? groupBy;
 
   /// Builder for group section headers. If null, [DefaultGroupHeader] is used.
@@ -76,12 +134,22 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
   /// Comparator for ordering groups. If null, groups appear in insertion order.
   final Comparator<Object>? groupComparator;
 
-  /// Maximum extent for sticky group headers (default: 48.0)
+  /// Fixed extent for sticky group headers (default: 48.0).
+  ///
+  /// This value is used as both `maxExtent` and `minExtent` in the underlying
+  /// [SliverPersistentHeaderDelegate], so the header does not shrink or grow
+  /// during scrolling.
   final double groupHeaderExtent;
 
   /// Accessibility configuration for screen reader semantics.
+  ///
+  /// Controls semantic labels on the search field and screen reader
+  /// announcements when result counts change.
   final AccessibilityConfiguration accessibilityConfig;
 
+  /// Creates a sliver searchable list widget for use in [CustomScrollView].
+  ///
+  /// Provide either [items] for offline mode or [asyncLoader] for async mode.
   const SliverSmartSearchList({
     super.key,
     this.items,
@@ -201,8 +269,9 @@ class _SliverSmartSearchListState<T extends Object>
       }
       if (widget.searchConfig.fuzzySearchEnabled !=
           oldWidget.searchConfig.fuzzySearchEnabled) {
-        _controller
-            .updateFuzzySearchEnabled(widget.searchConfig.fuzzySearchEnabled);
+        _controller.updateFuzzySearchEnabled(
+          widget.searchConfig.fuzzySearchEnabled,
+        );
       }
       if (widget.searchConfig.fuzzyThreshold !=
           oldWidget.searchConfig.fuzzyThreshold) {
@@ -215,11 +284,31 @@ class _SliverSmartSearchListState<T extends Object>
       oldWidget.controller?.removeListener(_onControllerChangedForAnnouncement);
       oldWidget.controller?.removeListener(_onControllerChanged);
       if (widget.controller != null) {
-        _controller = widget.controller!;
-        _controller.addListener(_onControllerChanged);
-        if (widget.accessibilityConfig.searchSemanticsEnabled) {
-          _controller.addListener(_onControllerChangedForAnnouncement);
+        // Switching to a new external controller
+        if (_controllerCreatedInternally) {
+          _controller.dispose();
+          _controllerCreatedInternally = false;
         }
+        _controller = widget.controller!;
+      } else {
+        // Switching from external to null → create a new internal controller
+        _controller = SmartSearchController<T>(
+          searchableFields: widget.searchableFields,
+          debounceDelay: widget.searchConfig.debounceDelay,
+          cacheResults: widget.cacheResults,
+          maxCacheSize: widget.maxCacheSize,
+          caseSensitive: widget.searchConfig.caseSensitive,
+          minSearchLength: widget.searchConfig.minSearchLength,
+          pageSize: widget.paginationConfig?.pageSize ?? 20,
+          fuzzySearchEnabled: widget.searchConfig.fuzzySearchEnabled,
+          fuzzyThreshold: widget.searchConfig.fuzzyThreshold,
+        );
+        _controllerCreatedInternally = true;
+        _initializeData();
+      }
+      _controller.addListener(_onControllerChanged);
+      if (widget.accessibilityConfig.searchSemanticsEnabled) {
+        _controller.addListener(_onControllerChangedForAnnouncement);
       }
     }
   }
@@ -261,7 +350,10 @@ class _SliverSmartSearchListState<T extends Object>
     return _buildSliver();
   }
 
-  /// Compute search terms once per build for highlighting
+  /// Search terms extracted from the current query for highlighting.
+  ///
+  /// Note: this getter recomputes on every access (Dart getters are not
+  /// cached). Call it once per build and pass the result down.
   List<String> get _searchTerms =>
       _controller.searchQuery.split(' ').where((s) => s.isNotEmpty).toList();
 
@@ -345,9 +437,13 @@ class _SliverSmartSearchListState<T extends Object>
         ? _controller.items.length + 1
         : _controller.items.length;
 
+    // Compute search terms once for all items (the getter recomputes on
+    // every access, so we cache the result here).
+    final searchTerms = _searchTerms;
+
     return SliverList(
       delegate: SliverChildBuilderDelegate(
-        _itemBuilder,
+        (context, index) => _itemBuilder(context, index, searchTerms),
         childCount: itemCount,
         addAutomaticKeepAlives: widget.listConfig.addAutomaticKeepAlives,
         addRepaintBoundaries: widget.listConfig.addRepaintBoundaries,
@@ -359,6 +455,10 @@ class _SliverSmartSearchListState<T extends Object>
   Widget _buildGroupedSlivers() {
     final items = _controller.items;
     final groupBy = widget.groupBy!;
+
+    // Compute search terms once for all items (the getter recomputes on
+    // every access, so we cache the result here).
+    final searchTerms = _searchTerms;
 
     // Build grouped data preserving order
     final groupOrder = <Object>[];
@@ -407,7 +507,7 @@ class _SliverSmartSearchListState<T extends Object>
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final indexed = groupItems[index];
-                  return _itemBuilder(context, indexed.index);
+                  return _itemBuilder(context, indexed.index, searchTerms);
                 },
                 childCount: groupItems.length,
                 addAutomaticKeepAlives:
@@ -426,13 +526,16 @@ class _SliverSmartSearchListState<T extends Object>
       slivers.add(const SliverToBoxAdapter(child: DefaultLoadMoreWidget()));
     }
 
-    // MultiSliver requires returning a single widget. Use SliverMainAxisGroup
-    // to wrap multiple groups, or return them via a helper.
-    // Since build() already returns a single Widget, we need a wrapper.
+    // build() must return a single Widget, so wrap all group slivers in a
+    // SliverMainAxisGroup.
     return SliverMainAxisGroup(slivers: slivers);
   }
 
-  Widget _itemBuilder(BuildContext context, int index) {
+  Widget _itemBuilder(
+    BuildContext context,
+    int index,
+    List<String> searchTerms,
+  ) {
     // Handle loading more indicator
     if (index >= _controller.items.length) {
       return const DefaultLoadMoreWidget();
@@ -444,7 +547,7 @@ class _SliverSmartSearchListState<T extends Object>
       context,
       item,
       index,
-      searchTerms: _searchTerms,
+      searchTerms: searchTerms,
     );
 
     // Wrap with selection checkbox if enabled
@@ -489,14 +592,14 @@ class _SliverSmartSearchListState<T extends Object>
   }
 }
 
-/// Internal helper for tracking original index in grouped sliver views
+/// Internal helper for tracking original index in grouped sliver views.
 class _SliverIndexedItem<T> {
   final T item;
   final int index;
   const _SliverIndexedItem(this.item, this.index);
 }
 
-/// Delegate for sticky group headers in sliver grouped lists
+/// Delegate for sticky group headers in sliver grouped lists.
 class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
 

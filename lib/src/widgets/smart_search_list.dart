@@ -4,11 +4,17 @@ import '../core/smart_search_controller.dart';
 import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
 import 'default_widgets.dart';
+import 'sliver_smart_search_list.dart';
 
-/// A highly customizable searchable list widget
+/// A highly customizable searchable list widget.
 ///
 /// Supports both offline and async data sources with search, filter, sort,
 /// and pagination capabilities.
+///
+/// This widget uses a [Column] with [Expanded] internally, so it must receive
+/// a bounded height constraint from its parent. Do not place it inside a
+/// [ListView] or [SingleChildScrollView] — use [SliverSmartSearchList] for
+/// [CustomScrollView] integration instead.
 ///
 /// Example:
 /// ```dart
@@ -21,43 +27,71 @@ import 'default_widgets.dart';
 /// )
 /// ```
 class SmartSearchList<T extends Object> extends StatefulWidget {
-  /// Items for offline mode (provide either this OR asyncLoader)
+  /// Items for offline mode (provide either this OR asyncLoader).
   final List<T>? items;
 
-  /// Async data loader (provide either this OR items)
+  /// Async data loader (provide either this OR [items]).
+  ///
+  /// Called with an empty string on initial load — handle `''` as "load all".
+  /// The `page` parameter is **zero-indexed**: the first page is `0`, the
+  /// second is `1`, and so on. `pageSize` reflects the configured page size
+  /// (default 20).
   final Future<List<T>> Function(String query, {int page, int pageSize})?
   asyncLoader;
 
-  /// Function to extract searchable text from items
+  /// Function to extract searchable text from items.
   final List<String> Function(T item) searchableFields;
 
-  /// Required: Builder for list items
+  /// Builds each item in the list.
   final ItemBuilder<T> itemBuilder;
 
-  /// Optional: External controller
+  /// Optional external controller. When provided, you are responsible for
+  /// disposing it — the widget only disposes controllers it creates internally.
   final SmartSearchController<T>? controller;
 
-  /// Builder functions for customization
+  /// Builder for a custom search field. If null, [DefaultSearchField] is used.
   final SearchFieldBuilder? searchFieldBuilder;
+
+  /// Builder for item separators. If null, no separators are shown.
   final SeparatorBuilder? separatorBuilder;
+
+  /// Builder for the loading state shown in the list area while data is loading.
   final LoadingStateBuilder? loadingStateBuilder;
+
+  /// Builder for the error state shown in the list area when loading fails.
   final ErrorStateBuilder? errorStateBuilder;
+
+  /// Builder for the empty state shown in the list area when there is no data.
   final EmptyStateBuilder? emptyStateBuilder;
+
+  /// Builder for the empty search state shown in the list area when no results match.
   final EmptySearchStateBuilder? emptySearchStateBuilder;
+
+  /// Builder for sort controls.
   final SortBuilder<T>? sortBuilder;
+
+  /// Builder for filter controls.
   final FilterBuilder<T>? filterBuilder;
 
-  /// Configuration objects
+  /// Search behavior configuration (debounce, hint text, case sensitivity, etc.).
   final SearchConfiguration searchConfig;
+
+  /// List appearance configuration (scroll physics, padding, etc.).
   final ListConfiguration listConfig;
+
+  /// Pagination configuration. If null, pagination is disabled.
   final PaginationConfiguration? paginationConfig;
 
-  /// Callbacks
+  /// Called when a list item is tapped.
   final void Function(T item, int index)? onItemTap;
+
+  /// Called when the search query changes.
   final void Function(String query)? onSearchChanged;
+
+  /// Called on pull-to-refresh.
   final VoidCallback? onRefresh;
 
-  /// Called when selection changes (multi-select mode)
+  /// Called when selection changes (multi-select mode).
   final void Function(Set<T> selectedItems)? onSelectionChanged;
 
   /// Builder for an inline progress indicator shown during async operations.
@@ -67,14 +101,16 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
   /// shimmer, etc. Return [SizedBox.shrink] when not loading.
   final ProgressIndicatorBuilder? progressIndicatorBuilder;
 
-  /// Widget to display below search field (for filters, chips, etc)
+  /// Widget to display below search field (for filters, chips, etc.).
   final Widget? belowSearchWidget;
 
-  /// Scroll controller
+  /// Scroll controller.
   final ScrollController? scrollController;
 
-  /// Performance options
+  /// Whether to cache async search results. Defaults to `true`.
   final bool cacheResults;
+
+  /// Maximum number of cached results. Defaults to `100`.
   final int maxCacheSize;
 
   /// Multi-select configuration. When non-null, multi-select mode is enabled.
@@ -82,6 +118,14 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
 
   /// Groups items by the returned value. When non-null, items are displayed
   /// in sections with headers.
+  ///
+  /// Group headers scroll with the list and are **not** sticky. For sticky
+  /// (pinned) group headers, use [SliverSmartSearchList].
+  ///
+  /// The returned value is used as a [Map] key internally, so it must have
+  /// correct [Object.==] and [Object.hashCode] implementations. Built-in
+  /// types like [String] and [int] satisfy this. Custom objects must override
+  /// both operators to ensure consistent grouping.
   final Object Function(T item)? groupBy;
 
   /// Builder for group section headers. If null, [DefaultGroupHeader] is used.
@@ -92,10 +136,13 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
 
   /// Accessibility configuration for screen reader semantics.
   ///
-  /// Controls semantic labels on the search field and screen reader announcements
+  /// Controls semantic labels on the search field and screen reader
   /// announcements when result counts change.
   final AccessibilityConfiguration accessibilityConfig;
 
+  /// Creates a searchable list widget.
+  ///
+  /// Provide either [items] for offline mode or [asyncLoader] for async mode.
   const SmartSearchList({
     super.key,
     this.items,
@@ -129,10 +176,12 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
     this.groupComparator,
     this.accessibilityConfig = const AccessibilityConfiguration(),
   }) : assert(
-         controller != null ||
-             ((items != null && asyncLoader == null) ||
-                 (items == null && asyncLoader != null)),
-         'Provide either items OR asyncLoader, not both (unless using external controller)',
+         items == null || asyncLoader == null,
+         'Provide either items OR asyncLoader, not both',
+       ),
+       assert(
+         items != null || asyncLoader != null || controller != null,
+         'Provide items, asyncLoader, or a controller',
        );
 
   @override
@@ -149,7 +198,7 @@ class _SmartSearchListState<T extends Object>
   bool _isDisposed = false;
   bool _controllerCreatedInternally = false;
 
-  /// Tracks the last result count announced to avoid duplicate announcements.
+  /// Last result count announced to avoid duplicate screen reader announcements.
   int? _lastAnnouncedCount;
 
   @override
@@ -240,8 +289,9 @@ class _SmartSearchListState<T extends Object>
       }
       if (widget.searchConfig.fuzzySearchEnabled !=
           oldWidget.searchConfig.fuzzySearchEnabled) {
-        _controller
-            .updateFuzzySearchEnabled(widget.searchConfig.fuzzySearchEnabled);
+        _controller.updateFuzzySearchEnabled(
+          widget.searchConfig.fuzzySearchEnabled,
+        );
       }
       if (widget.searchConfig.fuzzyThreshold !=
           oldWidget.searchConfig.fuzzyThreshold) {
@@ -253,10 +303,30 @@ class _SmartSearchListState<T extends Object>
     if (widget.controller != oldWidget.controller) {
       oldWidget.controller?.removeListener(_onControllerChangedForAnnouncement);
       if (widget.controller != null) {
-        _controller = widget.controller!;
-        if (widget.accessibilityConfig.searchSemanticsEnabled) {
-          _controller.addListener(_onControllerChangedForAnnouncement);
+        // Switching to a new external controller
+        if (_controllerCreatedInternally) {
+          _controller.dispose();
+          _controllerCreatedInternally = false;
         }
+        _controller = widget.controller!;
+      } else {
+        // Switching from external to null → create a new internal controller
+        _controller = SmartSearchController<T>(
+          searchableFields: widget.searchableFields,
+          debounceDelay: widget.searchConfig.debounceDelay,
+          cacheResults: widget.cacheResults,
+          maxCacheSize: widget.maxCacheSize,
+          caseSensitive: widget.searchConfig.caseSensitive,
+          minSearchLength: widget.searchConfig.minSearchLength,
+          pageSize: widget.paginationConfig?.pageSize ?? 20,
+          fuzzySearchEnabled: widget.searchConfig.fuzzySearchEnabled,
+          fuzzyThreshold: widget.searchConfig.fuzzyThreshold,
+        );
+        _controllerCreatedInternally = true;
+        _initializeData();
+      }
+      if (widget.accessibilityConfig.searchSemanticsEnabled) {
+        _controller.addListener(_onControllerChangedForAnnouncement);
       }
     }
   }
@@ -333,15 +403,17 @@ class _SmartSearchListState<T extends Object>
     _controller.removeListener(_onControllerChangedForAnnouncement);
     _searchTextController.removeListener(_onSearchTextChanged);
 
+    // Always remove scroll listeners before disposing
+    if (widget.paginationConfig?.enabled == true) {
+      _scrollController.removeListener(_onScroll);
+    }
+    if (widget.searchConfig.closeKeyboardOnScroll) {
+      _scrollController.removeListener(_handleKeyboardOnScroll);
+    }
+
+    // Only dispose the scroll controller if we created it internally
     if (widget.scrollController == null) {
       _scrollController.dispose();
-    } else {
-      if (widget.paginationConfig?.enabled == true) {
-        _scrollController.removeListener(_onScroll);
-      }
-      if (widget.searchConfig.closeKeyboardOnScroll) {
-        _scrollController.removeListener(_handleKeyboardOnScroll);
-      }
     }
 
     // Dispose controllers
@@ -715,7 +787,7 @@ class _SmartSearchListState<T extends Object>
   }
 }
 
-/// Internal helper for tracking original index in grouped views
+/// Internal helper for tracking original index in grouped views.
 class _IndexedItem<T> {
   final T item;
   final int index;

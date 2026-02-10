@@ -1,57 +1,64 @@
 /// Fuzzy search utilities for subsequence matching with scoring.
 ///
-/// Provides a zero-dependency fuzzy matching algorithm optimised for
+/// Provides a zero-dependency fuzzy matching algorithm optimized for
 /// real-time search over short strings (product names, usernames, cities).
 ///
 /// The algorithm uses **ordered subsequence matching**: every character in
 /// the query must appear in the text *in order*, but not necessarily
-/// consecutively. Scores favour consecutive runs and word-boundary alignment.
+/// consecutively. Scores favor consecutive runs and word-boundary alignment.
 library;
 
 /// Result of a fuzzy match attempt.
 ///
-/// Contains the [score] (0.0 – 1.0) and the character [matchIndices] in the
-/// source text that were matched so consumers can highlight them.
+/// Contains the [score] (`[0.01, 1.0]`) and the character [matchIndices] in
+/// the source text that were matched so consumers can highlight them.
 class FuzzyMatchResult {
-  /// Match score from 0.0 (worst accepted) to 1.0 (exact substring match).
+  /// Match score in the range `[0.01, 1.0]`.
+  ///
+  /// A score of **1.0** indicates an exact contiguous substring match.
+  /// Non-exact matches are clamped to a minimum of **0.01**.
   final double score;
 
   /// Indices in the source text that matched the query characters, in order.
   ///
-  /// The length equals the query length when a match is found.
+  /// For exact and subsequence matches the length equals the query length.
+  /// For edit-distance fallback matches the length may differ (it spans the
+  /// matched window in the source text).
   final List<int> matchIndices;
 
+  /// Creates a match result with the given [score] and [matchIndices].
   const FuzzyMatchResult({required this.score, required this.matchIndices});
 
+  /// Returns a human-readable representation including score and indices.
   @override
   String toString() =>
       'FuzzyMatchResult(score: ${score.toStringAsFixed(3)}, indices: $matchIndices)';
 }
 
-/// Core fuzzy-matching engine.
-///
-/// All methods are static and pure – no allocations beyond the result objects.
+/// Provides fuzzy-matching via static, pure methods for subsequence and edit-distance searches.
 abstract final class FuzzyMatcher {
   // -----------------------------------------------------------------------
   // Public API
   // -----------------------------------------------------------------------
 
-  /// Attempt to fuzzy-match [query] against [text].
-  ///
-  /// Returns `null` when the text does not contain every query character in
-  /// order (i.e. no subsequence match exists).
-  ///
-  /// When [caseSensitive] is false (the default) both strings are compared
-  /// in lower-case.
-  ///
-  /// The returned [FuzzyMatchResult.score] is in the range `(0.0, 1.0]`.
-  /// A score of **1.0** means the query is an exact contiguous substring.
   /// Maximum edit distance for the Levenshtein fallback.
   ///
   /// Queries with 1-2 extra/wrong characters are caught. Keeping this low
   /// ensures the fallback stays fast.
   static const int maxEditDistance = 2;
 
+  /// Attempts to fuzzy-match [query] against [text].
+  ///
+  /// Returns `null` when the text does not contain every query character in
+  /// order (i.e. no subsequence match exists) and the edit-distance fallback
+  /// also fails.
+  ///
+  /// When [caseSensitive] is false (the default) both strings are compared
+  /// in lower-case.
+  ///
+  /// The returned [FuzzyMatchResult.score] is in the range `[0.01, 1.0]`.
+  /// A score of **1.0** means the query is an exact contiguous substring.
+  /// Non-exact matches are clamped to a minimum of **0.01**.
   static FuzzyMatchResult? match(
     String query,
     String text, {
@@ -86,7 +93,7 @@ abstract final class FuzzyMatcher {
     return _editDistanceFallback(q, t);
   }
 
-  /// Score a single item against [query] using multiple [fields].
+  /// Scores a single item against [query] using multiple [fields].
   ///
   /// Returns the **best** (highest) score across all fields, or `null` when
   /// no field matches.
@@ -152,9 +159,9 @@ abstract final class FuzzyMatcher {
   // Scoring
   // -----------------------------------------------------------------------
 
-  /// Compute a score in (0.0, 1.0) for the given match [indices].
+  /// Compute a score in `[0.01, 0.99]` for the given match [indices].
   ///
-  /// Factors (each normalised to 0–1, then weighted):
+  /// Factors (each normalized to 0–1, then weighted):
   ///   1. **Consecutive ratio** (weight 0.50) – proportion of matched chars
   ///      that are part of a consecutive run of ≥ 2.
   ///   2. **Density** (weight 0.25) – how tightly packed the matches are
@@ -185,7 +192,7 @@ abstract final class FuzzyMatcher {
     final span = indices.last - indices.first + 1;
     final density = qLen / span; // 1.0 when fully consecutive.
 
-    // 3. Position – normalised start position (0 = start of text).
+    // 3. Position – normalized start position (0 = start of text).
     final position = 1.0 - (indices.first / tLen);
 
     // 4. Word-boundary bonus.
@@ -257,7 +264,7 @@ abstract final class FuzzyMatcher {
       (i) => bestWindowStart + i,
     );
 
-    // Score: penalise based on edit distance. Max score for fallback is 0.6.
+    // Score: penalize based on edit distance. Max score for fallback is 0.6.
     final distancePenalty = bestDistance / (qLen.clamp(1, 100));
     final positionBonus = 1.0 - (bestWindowStart / tLen);
     final boundaryBonus =

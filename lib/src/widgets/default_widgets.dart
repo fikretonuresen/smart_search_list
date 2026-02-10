@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
 
-/// Default search field widget
-///
-/// Provides a clean, Material Design search field with clear button
+/// A Material Design search text field with clear and submit buttons.
 class DefaultSearchField extends StatelessWidget {
+  /// The text editing controller for the search field.
   final TextEditingController controller;
+
+  /// The focus node for the search field.
   final FocusNode focusNode;
+
+  /// The search configuration controlling appearance and behavior.
   final SearchConfiguration configuration;
+
+  /// Callback invoked when the user clears the search field.
   final VoidCallback onClear;
 
   /// Called when the user submits the search (presses Enter/Search on keyboard).
@@ -18,6 +23,7 @@ class DefaultSearchField extends StatelessWidget {
   /// Accessibility configuration for semantic labels and tooltips.
   final AccessibilityConfiguration accessibilityConfig;
 
+  /// Creates a default Material Design search field.
   const DefaultSearchField({
     super.key,
     required this.controller,
@@ -111,10 +117,9 @@ class DefaultSearchField extends StatelessWidget {
   }
 }
 
-/// Default loading widget
-///
-/// Shows a centered circular progress indicator
+/// Displays a centered circular progress indicator for loading states.
 class DefaultLoadingWidget extends StatelessWidget {
+  /// Creates a default loading indicator.
   const DefaultLoadingWidget({super.key});
 
   @override
@@ -123,13 +128,15 @@ class DefaultLoadingWidget extends StatelessWidget {
   }
 }
 
-/// Default error widget
-///
-/// Shows error icon, message, and retry button
+/// Displays an error icon, message, and retry button.
 class DefaultErrorWidget extends StatelessWidget {
+  /// The error object to display.
   final Object error;
+
+  /// Callback invoked when the user taps "Try again".
   final VoidCallback onRetry;
 
+  /// Creates a default error display.
   const DefaultErrorWidget({
     super.key,
     required this.error,
@@ -176,10 +183,11 @@ class DefaultErrorWidget extends StatelessWidget {
   }
 }
 
-/// Default empty widget for when there's no data initially
+/// Default empty widget for when there's no data initially.
 ///
-/// Shows "No items to display" message
+/// Shows "No items to display" message.
 class DefaultEmptyWidget extends StatelessWidget {
+  /// Creates a default empty state display.
   const DefaultEmptyWidget({super.key});
 
   @override
@@ -217,12 +225,14 @@ class DefaultEmptyWidget extends StatelessWidget {
   }
 }
 
-/// Default empty search widget for when search returns no results
+/// Default empty search widget for when search returns no results.
 ///
-/// Shows "No results found for 'query'" message
+/// Shows "No results found for 'query'" message.
 class DefaultEmptySearchWidget extends StatelessWidget {
+  /// The search query that returned no results.
   final String searchQuery;
 
+  /// Creates a default empty search results display.
   const DefaultEmptySearchWidget({super.key, required this.searchQuery});
 
   @override
@@ -262,16 +272,17 @@ class DefaultEmptySearchWidget extends StatelessWidget {
   }
 }
 
-/// Default group header widget for grouped lists
+/// Default group header widget for grouped lists.
 ///
-/// Displays the group value as a section header with item count
+/// Displays the group value as a section header with item count.
 class DefaultGroupHeader extends StatelessWidget {
-  /// The group value (typically a String like a category name)
+  /// The group value (typically a String like a category name).
   final Object groupValue;
 
-  /// Number of items in this group
+  /// Number of items in this group.
   final int itemCount;
 
+  /// Creates a default group header.
   const DefaultGroupHeader({
     super.key,
     required this.groupValue,
@@ -299,10 +310,11 @@ class DefaultGroupHeader extends StatelessWidget {
   }
 }
 
-/// Default load more widget
+/// Displays a centered progress indicator for pagination loading.
 ///
-/// Shows loading indicator at bottom of list during pagination
+/// Shows loading indicator at bottom of list during pagination.
 class DefaultLoadMoreWidget extends StatelessWidget {
+  /// Creates a default pagination loading indicator.
   const DefaultLoadMoreWidget({super.key});
 
   @override

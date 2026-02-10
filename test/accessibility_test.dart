@@ -51,9 +51,7 @@ void main() {
     });
 
     test('copyWith with no arguments returns equivalent config', () {
-      const original = AccessibilityConfiguration(
-        searchFieldLabel: 'Search',
-      );
+      const original = AccessibilityConfiguration(searchFieldLabel: 'Search');
 
       final copy = original.copyWith();
 
@@ -89,8 +87,9 @@ void main() {
       textController.dispose();
     });
 
-    testWidgets('clear button uses custom label from accessibility config',
-        (tester) async {
+    testWidgets('clear button uses custom label from accessibility config', (
+      tester,
+    ) async {
       final textController = TextEditingController(text: 'hello');
 
       await tester.pumpWidget(
@@ -173,8 +172,9 @@ void main() {
       textController.dispose();
     });
 
-    testWidgets('searchFieldLabel is applied to InputDecoration',
-        (tester) async {
+    testWidgets('searchFieldLabel is applied to InputDecoration', (
+      tester,
+    ) async {
       final textController = TextEditingController();
 
       await tester.pumpWidget(
@@ -207,10 +207,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: DefaultGroupHeader(
-              groupValue: 'Electronics',
-              itemCount: 5,
-            ),
+            body: DefaultGroupHeader(groupValue: 'Electronics', itemCount: 5),
           ),
         ),
       );
@@ -218,10 +215,7 @@ void main() {
       // Find the Semantics node with header: true
       final semantics = tester.getSemantics(find.byType(DefaultGroupHeader));
       // Verify the header flag is set via the semantics tree
-      expect(
-        semantics,
-        matchesSemantics(isHeader: true),
-      );
+      expect(semantics, matchesSemantics(isHeader: true));
 
       handle.dispose();
     });
@@ -393,9 +387,9 @@ void main() {
                 SliverSmartSearchList<String>(
                   items: const ['Apple', 'Banana'],
                   searchableFields: (item) => [item],
-                  itemBuilder: (context, item, index,
-                          {searchTerms = const []}) =>
-                      ListTile(title: Text(item)),
+                  itemBuilder:
+                      (context, item, index, {searchTerms = const []}) =>
+                          ListTile(title: Text(item)),
                   accessibilityConfig: const AccessibilityConfiguration(
                     searchFieldLabel: 'Search fruits',
                   ),
@@ -410,8 +404,9 @@ void main() {
       expect(find.text('Apple'), findsOneWidget);
     });
 
-    testWidgets('sliver variant renders with accessibility enabled',
-        (tester) async {
+    testWidgets('sliver variant renders with accessibility enabled', (
+      tester,
+    ) async {
       final handle = tester.ensureSemantics();
 
       await tester.pumpWidget(
@@ -422,9 +417,9 @@ void main() {
                 SliverSmartSearchList<String>(
                   items: const ['Apple', 'Banana'],
                   searchableFields: (item) => [item],
-                  itemBuilder: (context, item, index,
-                          {searchTerms = const []}) =>
-                      ListTile(title: Text(item)),
+                  itemBuilder:
+                      (context, item, index, {searchTerms = const []}) =>
+                          ListTile(title: Text(item)),
                   accessibilityConfig: const AccessibilityConfiguration(
                     searchSemanticsEnabled: true,
                     searchFieldLabel: 'Search fruits',

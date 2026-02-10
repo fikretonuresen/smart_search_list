@@ -36,9 +36,10 @@ class SearchHighlightText extends StatelessWidget {
   /// Style for matching text. Defaults to bold with [highlightColor].
   final TextStyle? matchStyle;
 
-  /// Background colour applied to matched characters.
+  /// Background color applied to matched characters.
   ///
-  /// Ignored when [matchStyle] has its own [TextStyle.backgroundColor].
+  /// Ignored when [matchStyle] is provided, because the entire
+  /// [matchStyle] is used as-is for matched text.
   /// Defaults to `Colors.yellow.withValues(alpha: 0.3)`.
   final Color? highlightColor;
 
@@ -51,12 +52,13 @@ class SearchHighlightText extends StatelessWidget {
   /// Maximum number of lines. Defaults to unlimited.
   final int? maxLines;
 
-  /// Text overflow behaviour.
+  /// How overflowing text is handled when [maxLines] is exceeded.
   final TextOverflow? overflow;
 
-  /// Text alignment.
+  /// How the text is aligned horizontally.
   final TextAlign? textAlign;
 
+  /// Creates a text widget that highlights characters matching [searchTerms].
   const SearchHighlightText({
     super.key,
     required this.text,
@@ -95,14 +97,12 @@ class SearchHighlightText extends StatelessWidget {
         ? _buildFuzzySpans(effectiveMatchStyle)
         : _buildExactSpans(effectiveMatchStyle);
 
-    return RichText(
-      text: TextSpan(
-        style: style ?? DefaultTextStyle.of(context).style,
-        children: spans,
-      ),
+    return Text.rich(
+      TextSpan(children: spans),
+      style: style,
       maxLines: maxLines,
-      overflow: overflow ?? TextOverflow.clip,
-      textAlign: textAlign ?? TextAlign.start,
+      overflow: overflow,
+      textAlign: textAlign,
     );
   }
 

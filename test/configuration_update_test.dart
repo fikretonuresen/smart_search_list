@@ -46,8 +46,10 @@ void main() {
 
       // Verify search behavior respects new minimum length
       controller.search('A'); // Should not trigger search since length < 2
-      expect(controller.searchQuery,
-          ''); // Query should be empty since it's below minimum
+      expect(
+        controller.searchQuery,
+        '',
+      ); // Query should be empty since it's below minimum
     });
 
     test('should not update if value is the same', () {

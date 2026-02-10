@@ -57,8 +57,9 @@ void main() {
       expect(find.text('Cherry'), findsNothing);
     });
 
-    testWidgets('shows emptySearchStateBuilder when no matches',
-        (tester) async {
+    testWidgets('shows emptySearchStateBuilder when no matches', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -87,8 +88,9 @@ void main() {
       expect(find.text('Nothing found for "zzzzz"'), findsOneWidget);
     });
 
-    testWidgets('shows emptyStateBuilder when items list is empty',
-        (tester) async {
+    testWidgets('shows emptyStateBuilder when items list is empty', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -156,8 +158,8 @@ void main() {
                   searchableFields: (item) => [item],
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
-                    return ListTile(title: Text(item));
-                  },
+                        return ListTile(title: Text(item));
+                      },
                 );
               },
             ),
@@ -183,8 +185,9 @@ void main() {
       expect(find.text('Elderberry'), findsOneWidget);
     });
 
-    testWidgets('didUpdateWidget propagates asyncLoader change',
-        (tester) async {
+    testWidgets('didUpdateWidget propagates asyncLoader change', (
+      tester,
+    ) async {
       int loaderCallCount = 0;
 
       Future<List<String>> loaderA(
@@ -222,8 +225,8 @@ void main() {
                   ),
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
-                    return ListTile(title: Text(item));
-                  },
+                        return ListTile(title: Text(item));
+                      },
                 );
               },
             ),
@@ -252,8 +255,9 @@ void main() {
       expect(loaderCallCount, greaterThanOrEqualTo(1));
     });
 
-    testWidgets('selection toggles and onSelectionChanged fires',
-        (tester) async {
+    testWidgets('selection toggles and onSelectionChanged fires', (
+      tester,
+    ) async {
       final selectedItems = <String>{};
 
       await tester.pumpWidget(
@@ -292,18 +296,14 @@ void main() {
       expect(selectedItems.contains('Apple'), true);
     });
 
-    testWidgets('group headers render when groupBy is provided',
-        (tester) async {
+    testWidgets('group headers render when groupBy is provided', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: SmartSearchList<String>(
-              items: const [
-                'Apple',
-                'Avocado',
-                'Banana',
-                'Blueberry',
-              ],
+              items: const ['Apple', 'Avocado', 'Banana', 'Blueberry'],
               searchableFields: (item) => [item],
               groupBy: (item) => item[0], // Group by first letter
               groupComparator: (a, b) => (a as String).compareTo(b as String),
@@ -358,8 +358,9 @@ void main() {
       controller.setItems(['test']);
     });
 
-    testWidgets('pagination triggers loadMore at scroll threshold',
-        (tester) async {
+    testWidgets('pagination triggers loadMore at scroll threshold', (
+      tester,
+    ) async {
       int lastRequestedPage = 0;
       final completer = Completer<List<String>>();
 
@@ -371,10 +372,7 @@ void main() {
                 lastRequestedPage = page;
                 if (page == 0) {
                   // Return exactly pageSize items to indicate more pages
-                  return List.generate(
-                    pageSize,
-                    (i) => 'Item ${i + 1}',
-                  );
+                  return List.generate(pageSize, (i) => 'Item ${i + 1}');
                 }
                 // Second page — wait on completer so we can check the request
                 return completer.future;
@@ -389,10 +387,7 @@ void main() {
                 triggerDistance: 200.0,
               ),
               itemBuilder: (context, item, index, {searchTerms = const []}) {
-                return SizedBox(
-                  height: 56,
-                  child: ListTile(title: Text(item)),
-                );
+                return SizedBox(height: 56, child: ListTile(title: Text(item)));
               },
             ),
           ),

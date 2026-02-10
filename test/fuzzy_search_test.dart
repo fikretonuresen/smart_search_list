@@ -357,15 +357,21 @@ void main() {
     });
 
     test('early exit on exact match', () {
-      final r =
-          FuzzyMatcher.matchFields('ban', ['Banana', 'Bandana', 'Banned']);
+      final r = FuzzyMatcher.matchFields('ban', [
+        'Banana',
+        'Bandana',
+        'Banned',
+      ]);
       expect(r, isNotNull);
       expect(r!.score, 1.0);
     });
 
     test('edit distance match across fields', () {
-      final r =
-          FuzzyMatcher.matchFields('apole', ['Banana', 'Apple', 'Cherry']);
+      final r = FuzzyMatcher.matchFields('apole', [
+        'Banana',
+        'Apple',
+        'Cherry',
+      ]);
       expect(r, isNotNull);
       expect(r!.score, lessThan(0.6));
     });
@@ -437,9 +443,7 @@ void main() {
       'Watermelon',
     ];
 
-    SmartSearchController<String> makeController({
-      double threshold = 0.3,
-    }) {
+    SmartSearchController<String> makeController({double threshold = 0.3}) {
       final c = SmartSearchController<String>(
         searchableFields: (item) => [item],
         fuzzySearchEnabled: true,
@@ -468,8 +472,11 @@ void main() {
       c.searchImmediate('ap');
       // Only items with "ap" as exact substring should pass
       for (final item in c.items) {
-        expect(item.toLowerCase().contains('ap'), true,
-            reason: '$item should contain "ap" at threshold 0.9');
+        expect(
+          item.toLowerCase().contains('ap'),
+          true,
+          reason: '$item should contain "ap" at threshold 0.9',
+        );
       }
       c.dispose();
     });
@@ -484,10 +491,16 @@ void main() {
         moderate.searchImmediate(query);
         strict.searchImmediate(query);
 
-        expect(strict.items.length, lessThanOrEqualTo(moderate.items.length),
-            reason: 'Query "$query": strict <= moderate');
-        expect(moderate.items.length, lessThanOrEqualTo(lenient.items.length),
-            reason: 'Query "$query": moderate <= lenient');
+        expect(
+          strict.items.length,
+          lessThanOrEqualTo(moderate.items.length),
+          reason: 'Query "$query": strict <= moderate',
+        );
+        expect(
+          moderate.items.length,
+          lessThanOrEqualTo(lenient.items.length),
+          reason: 'Query "$query": moderate <= lenient',
+        );
       }
 
       lenient.dispose();
@@ -499,8 +512,11 @@ void main() {
       for (final threshold in [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]) {
         final c = makeController(threshold: threshold);
         c.searchImmediate('apple');
-        expect(c.items, contains('Apple'),
-            reason: 'Exact match should pass threshold $threshold');
+        expect(
+          c.items,
+          contains('Apple'),
+          reason: 'Exact match should pass threshold $threshold',
+        );
         c.dispose();
       }
     });
@@ -509,8 +525,11 @@ void main() {
       final c = makeController(threshold: 0.6);
       c.searchImmediate('apole'); // edit distance match for Apple
       // Edit distance scores cap at 0.59, so threshold 0.6 should filter it
-      expect(c.items, isNot(contains('Apple')),
-          reason: 'Edit distance match (score<0.6) should be filtered at 0.6');
+      expect(
+        c.items,
+        isNot(contains('Apple')),
+        reason: 'Edit distance match (score<0.6) should be filtered at 0.6',
+      );
       c.dispose();
     });
 

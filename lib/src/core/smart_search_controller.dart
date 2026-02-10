@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'fuzzy_utils.dart';
 
-/// Controller for managing search, filter, sort, and pagination state
+/// Controller for managing search, filter, sort, and pagination state.
 ///
 /// Handles both offline and async data sources with proper disposal safety
-/// and race condition prevention.
+/// and race condition prevention. `T extends Object` ensures non-nullable types.
 ///
 /// Example:
 /// ```dart
@@ -17,7 +17,7 @@ import 'fuzzy_utils.dart';
 /// controller.search('App');
 /// ```
 class SmartSearchController<T extends Object> extends ChangeNotifier {
-  /// Creates a search controller
+  /// Creates a search controller.
   SmartSearchController({
     this.debounceDelay = const Duration(milliseconds: 300),
     required this.searchableFields,
@@ -33,37 +33,41 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
        _fuzzySearchEnabled = fuzzySearchEnabled,
        _fuzzyThreshold = fuzzyThreshold;
 
-  /// Delay for search debouncing
+  /// Delay for search debouncing.
   final Duration debounceDelay;
 
-  /// Function to extract searchable text from items
+  /// Function to extract searchable text from items.
   final List<String> Function(T item) searchableFields;
 
-  /// Whether to cache search results
+  /// Whether to cache search results.
   final bool cacheResults;
 
-  /// Maximum number of cached results
+  /// Maximum number of cached results.
   final int maxCacheSize;
 
   bool _caseSensitive;
   int _minSearchLength;
 
-  /// Page size for pagination
+  /// Page size for pagination.
   final int pageSize;
 
   bool _fuzzySearchEnabled;
   double _fuzzyThreshold;
 
-  /// Whether search is case sensitive
+  /// Whether search is case-sensitive.
   bool get caseSensitive => _caseSensitive;
 
-  /// Minimum characters to trigger search
+  /// Minimum characters to trigger search.
   int get minSearchLength => _minSearchLength;
 
-  /// Whether fuzzy (subsequence) matching is enabled for offline search
+  /// Whether fuzzy (subsequence) matching is enabled for offline search.
   bool get fuzzySearchEnabled => _fuzzySearchEnabled;
 
-  /// Minimum score (0.0 – 1.0) for fuzzy matches to be included
+  /// Minimum score (0.0 – 1.0) for fuzzy matches to be included.
+  ///
+  /// Actual match scores range from 0.01 (weakest fuzzy match) to 1.0 (exact
+  /// substring). A threshold of 0.0 accepts every fuzzy match; a threshold
+  /// above 1.0 effectively disables fuzzy results.
   double get fuzzyThreshold => _fuzzyThreshold;
 
   // Internal state
@@ -98,41 +102,41 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   // Multi-select
   final Set<T> _selectedItems = {};
 
-  /// Current filtered and sorted items
+  /// Current filtered and sorted items.
   List<T> get items => List.unmodifiable(_filteredItems);
 
-  /// All items (unfiltered)
+  /// All items (unfiltered).
   List<T> get allItems => List.unmodifiable(_allItems);
 
-  /// Current search query
+  /// Current search query.
   String get searchQuery => _searchQuery;
 
-  /// Whether user has performed a search
+  /// Whether the user has performed a search.
   bool get hasSearched => _hasSearched;
 
-  /// Whether currently loading
+  /// Whether the controller is currently loading data.
   bool get isLoading => _isLoading;
 
-  /// Whether loading more pages
+  /// Whether the controller is loading more pages.
   bool get isLoadingMore => _isLoadingMore;
 
-  /// Current error, if any
+  /// Current error, or `null` if none.
   Object? get error => _error;
 
-  /// Whether there are more pages to load
+  /// Whether there are more pages to load.
   bool get hasMorePages => _hasMorePages;
 
-  /// Whether the controller is disposed
+  /// Whether the controller is disposed.
   bool get isDisposed => _isDisposed;
 
-  /// Currently active filters
+  /// Currently active filters.
   Map<String, bool Function(T)> get activeFilters =>
       Map.unmodifiable(_activeFilters);
 
-  /// Current sort comparator
+  /// Current sort comparator.
   int Function(T, T)? get currentComparator => _currentComparator;
 
-  /// Update case sensitive setting and re-search if needed
+  /// Updates the case-sensitive setting and re-searches if needed.
   void updateCaseSensitive(bool value) {
     if (_isDisposed || _caseSensitive == value) return;
 
@@ -150,7 +154,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
-  /// Update minimum search length and re-search if needed
+  /// Updates the minimum search length and re-searches if needed.
   void updateMinSearchLength(int value) {
     if (_isDisposed || _minSearchLength == value) return;
 
@@ -165,7 +169,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
-  /// Set items for offline mode
+  /// Replaces all items and immediately re-applies filters and sort.
   void setItems(List<T> items) {
     if (_isDisposed) return;
 
@@ -174,7 +178,8 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _notifyListeners();
   }
 
-  /// Set async data loader
+  /// Sets the async data loader. Does not trigger a search — call
+  /// [search] or [refresh] after.
   void setAsyncLoader(
     Future<List<T>> Function(String query, {int page, int pageSize}) loader,
   ) {
@@ -186,13 +191,13 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   // Multi-select API
   // ---------------------------------------------------------------------------
 
-  /// Currently selected items
+  /// Currently selected items.
   Set<T> get selectedItems => Set.unmodifiable(_selectedItems);
 
-  /// Whether an item is currently selected
+  /// Whether an item is currently selected.
   bool isSelected(T item) => _selectedItems.contains(item);
 
-  /// Toggle selection state of an item
+  /// Toggles selection state of an item.
   void toggleSelection(T item) {
     if (_isDisposed) return;
     if (_selectedItems.contains(item)) {
@@ -203,7 +208,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _notifyListeners();
   }
 
-  /// Select a single item
+  /// Selects a single item.
   void select(T item) {
     if (_isDisposed) return;
     if (_selectedItems.add(item)) {
@@ -211,7 +216,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
-  /// Deselect a single item
+  /// Deselects a single item.
   void deselect(T item) {
     if (_isDisposed) return;
     if (_selectedItems.remove(item)) {
@@ -219,14 +224,14 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
-  /// Select all currently visible (filtered) items
+  /// Selects all currently visible (filtered) items.
   void selectAll() {
     if (_isDisposed) return;
     _selectedItems.addAll(_filteredItems);
     _notifyListeners();
   }
 
-  /// Deselect all items
+  /// Deselects all items.
   void deselectAll() {
     if (_isDisposed) return;
     if (_selectedItems.isEmpty) return;
@@ -234,14 +239,14 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _notifyListeners();
   }
 
-  /// Select items matching a predicate (from visible items)
+  /// Selects items matching a predicate (from visible items).
   void selectWhere(bool Function(T item) predicate) {
     if (_isDisposed) return;
     _selectedItems.addAll(_filteredItems.where(predicate));
     _notifyListeners();
   }
 
-  /// Deselect items matching a predicate
+  /// Deselects items matching a predicate.
   void deselectWhere(bool Function(T item) predicate) {
     if (_isDisposed) return;
     _selectedItems.removeWhere(predicate);
@@ -252,7 +257,15 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   // Search API
   // ---------------------------------------------------------------------------
 
-  /// Perform search with debouncing
+  /// Performs a debounced search for [query].
+  ///
+  /// Triggers after [debounceDelay]. Subsequent calls within the debounce
+  /// window cancel previous pending searches.
+  ///
+  /// **Note:** The debounce delay applies to every call, including the initial
+  /// load when the widget calls `search('')`. This means there is a
+  /// [debounceDelay] pause (default 300 ms) before the first results appear.
+  /// Use [searchImmediate] if you need results without the debounce delay.
   void search(String query) {
     if (_isDisposed) return;
 
@@ -260,9 +273,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _debounceTimer = Timer(debounceDelay, () => _performSearch(query));
   }
 
-  /// Perform search immediately, bypassing debounce
+  /// Performs search immediately, bypassing debounce.
   ///
-  /// Use this for [SearchTriggerMode.onSubmit] or programmatic searches
+  /// Use this for `SearchTriggerMode.onSubmit` or programmatic searches
   /// where you want instant results.
   void searchImmediate(String query) {
     if (_isDisposed) return;
@@ -371,7 +384,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _filteredItems = filtered;
   }
 
-  /// Score, filter, and rank items using fuzzy subsequence matching.
+  /// Scores, filters, and ranks items using fuzzy subsequence matching.
   ///
   /// Items are sorted descending by best match score. Exact substring
   /// matches always score 1.0 and appear first.
@@ -397,7 +410,19 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     return scored.map((s) => s.item).toList();
   }
 
-  /// Add a filter
+  /// Adds or replaces a named filter and re-triggers search immediately.
+  ///
+  /// The same [key] with a different predicate replaces the previous filter.
+  ///
+  /// **Offline mode:** The predicate is applied client-side to [allItems]
+  /// before search matching runs, so items that fail the filter are excluded
+  /// from results.
+  ///
+  /// **Async mode:** The filter change invalidates the cache and re-invokes
+  /// the async loader, but the predicate itself is **not** applied to the
+  /// returned results. The async loader is responsible for its own filtering
+  /// logic. If you need client-side filtering of async results, post-process
+  /// them in your loader or switch to offline mode with pre-fetched data.
   void setFilter(String key, bool Function(T) predicate) {
     if (_isDisposed) return;
 
@@ -406,7 +431,11 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _performSearch(_searchQuery);
   }
 
-  /// Remove a filter
+  /// Removes a named filter and re-triggers search immediately.
+  ///
+  /// In async mode this invalidates the cache and re-invokes the async
+  /// loader; see [setFilter] for details on how filters interact with
+  /// async results.
   void removeFilter(String key) {
     if (_isDisposed) return;
 
@@ -415,7 +444,11 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _performSearch(_searchQuery);
   }
 
-  /// Clear all filters
+  /// Removes all filters and re-triggers search immediately.
+  ///
+  /// In async mode this invalidates the cache and re-invokes the async
+  /// loader; see [setFilter] for details on how filters interact with
+  /// async results.
   void clearFilters() {
     if (_isDisposed) return;
 
@@ -424,7 +457,16 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _performSearch(_searchQuery);
   }
 
-  /// Set sort comparator
+  /// Sets the sort comparator and re-triggers search immediately.
+  ///
+  /// Pass `null` to remove sorting.
+  ///
+  /// **Offline mode:** The comparator is applied client-side after filtering
+  /// and search matching.
+  ///
+  /// **Async mode:** This invalidates the cache and re-invokes the async
+  /// loader, but the comparator is **not** applied to the returned results.
+  /// The async loader is responsible for its own sort order.
   void setSortBy(int Function(T, T)? comparator) {
     if (_isDisposed) return;
 
@@ -432,7 +474,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _performSearch(_searchQuery);
   }
 
-  /// Load more items (pagination)
+  /// Loads the next page of results (pagination).
+  ///
+  /// No-op if already loading, no more pages, or no async loader is set.
   Future<void> loadMore() async {
     if (_isDisposed ||
         !_hasMorePages ||
@@ -475,7 +519,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
-  /// Refresh data (clear cache and reload)
+  /// Clears the result cache, resets pagination, and reloads from page 0.
   Future<void> refresh() async {
     if (_isDisposed) return;
 
@@ -485,13 +529,13 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     await _performSearch(_searchQuery);
   }
 
-  /// Clear search
+  /// Clears the search query immediately (bypasses debounce).
   void clearSearch() {
     if (_isDisposed) return;
     searchImmediate('');
   }
 
-  /// Retry after error
+  /// Retries the last search after an error.
   Future<void> retry() async {
     if (_isDisposed) return;
 
@@ -537,7 +581,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
-  /// Update fuzzy search enabled state and re-search if needed
+  /// Updates fuzzy search enabled state and re-searches if needed.
   void updateFuzzySearchEnabled(bool value) {
     if (_isDisposed || _fuzzySearchEnabled == value) return;
 
@@ -552,7 +596,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
-  /// Update fuzzy threshold and re-search if needed
+  /// Updates fuzzy threshold and re-searches if needed.
   void updateFuzzyThreshold(double value) {
     if (_isDisposed || _fuzzyThreshold == value) return;
 
@@ -564,6 +608,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
   }
 
+  /// Releases resources: cancels debounce timer, clears selection and cache.
   @override
   void dispose() {
     _isDisposed = true;

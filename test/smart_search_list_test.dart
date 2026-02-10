@@ -164,8 +164,11 @@ void main() {
       );
 
       // Mock async loader
-      controller
-          .setAsyncLoader((query, {int page = 0, int pageSize = 20}) async {
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
         await Future.delayed(const Duration(milliseconds: 50));
         if (query.isEmpty) {
           return ['Item 1', 'Item 2', 'Item 3'];
@@ -197,8 +200,11 @@ void main() {
       );
 
       // Mock async loader that throws error
-      controller
-          .setAsyncLoader((query, {int page = 0, int pageSize = 20}) async {
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
         await Future.delayed(const Duration(milliseconds: 50));
         throw Exception('Network error');
       });
@@ -226,12 +232,16 @@ void main() {
       );
 
       int callCount = 0;
-      controller
-          .setAsyncLoader((query, {int page = 0, int pageSize = 20}) async {
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
         final currentCall = ++callCount;
         // First call takes longer than second
         await Future.delayed(
-            Duration(milliseconds: currentCall == 1 ? 100 : 20));
+          Duration(milliseconds: currentCall == 1 ? 100 : 20),
+        );
         return ['Result $currentCall for: $query'];
       });
 
@@ -257,8 +267,11 @@ void main() {
         debounceDelay: const Duration(milliseconds: 10),
       );
 
-      controller
-          .setAsyncLoader((query, {int page = 0, int pageSize = 20}) async {
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
         await Future.delayed(const Duration(milliseconds: 20));
         // Return 2 items for first page, 1 item for second page (< pageSize = no more pages)
         if (page == 0) return ['Item 1', 'Item 2'];
@@ -297,8 +310,11 @@ void main() {
       );
 
       bool firstCall = true;
-      controller
-          .setAsyncLoader((query, {int page = 0, int pageSize = 20}) async {
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
         await Future.delayed(const Duration(milliseconds: 20));
         if (firstCall) {
           firstCall = false;

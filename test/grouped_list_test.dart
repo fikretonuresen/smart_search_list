@@ -4,8 +4,9 @@ import 'package:smart_search_list/smart_search_list.dart';
 
 void main() {
   group('Grouped List Widget', () {
-    testWidgets('items are grouped correctly by groupBy function',
-        (tester) async {
+    testWidgets('items are grouped correctly by groupBy function', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -49,8 +50,9 @@ void main() {
       expect(find.textContaining('B'), findsWidgets);
     });
 
-    testWidgets('empty groups do not appear after search filter',
-        (tester) async {
+    testWidgets('empty groups do not appear after search filter', (
+      tester,
+    ) async {
       final controller = SmartSearchController<String>(
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
@@ -106,8 +108,9 @@ void main() {
       expect(find.text('Cherry'), findsOneWidget);
     });
 
-    testWidgets('DefaultGroupHeader shows group name and count',
-        (tester) async {
+    testWidgets('DefaultGroupHeader shows group name and count', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

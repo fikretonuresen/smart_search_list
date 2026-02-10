@@ -24,7 +24,7 @@ Requires Flutter 3.35.0 or higher.
 
 ```yaml
 dependencies:
-  smart_search_list: ^0.5.1
+  smart_search_list: ^0.6.1
 ```
 
 ## Quick Start

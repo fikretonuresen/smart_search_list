@@ -53,9 +53,7 @@ void main() {
     });
 
     test('SearchConfiguration.copyWith can override triggerMode', () {
-      const config = SearchConfiguration(
-        triggerMode: SearchTriggerMode.onEdit,
-      );
+      const config = SearchConfiguration(triggerMode: SearchTriggerMode.onEdit);
 
       final copied = config.copyWith(triggerMode: SearchTriggerMode.onSubmit);
       expect(copied.triggerMode, SearchTriggerMode.onSubmit);

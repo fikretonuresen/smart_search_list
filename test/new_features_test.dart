@@ -132,8 +132,9 @@ void main() {
       expect(receivedSearchTerms, ['app']);
     });
 
-    testWidgets('pull to refresh should show RefreshIndicator when enabled',
-        (tester) async {
+    testWidgets('pull to refresh should show RefreshIndicator when enabled', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -155,26 +156,27 @@ void main() {
     });
 
     testWidgets(
-        'pull to refresh should not show RefreshIndicator when disabled',
-        (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SmartSearchList<String>(
-              items: const ['Apple', 'Banana'],
-              searchableFields: (item) => [item],
-              itemBuilder: (context, item, index, {searchTerms = const []}) {
-                return ListTile(title: Text(item));
-              },
-              listConfig: const ListConfiguration(pullToRefresh: false),
+      'pull to refresh should not show RefreshIndicator when disabled',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SmartSearchList<String>(
+                items: const ['Apple', 'Banana'],
+                searchableFields: (item) => [item],
+                itemBuilder: (context, item, index, {searchTerms = const []}) {
+                  return ListTile(title: Text(item));
+                },
+                listConfig: const ListConfiguration(pullToRefresh: false),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Should not find RefreshIndicator when pull to refresh is disabled
-      expect(find.byType(RefreshIndicator), findsNothing);
-    });
+        // Should not find RefreshIndicator when pull to refresh is disabled
+        expect(find.byType(RefreshIndicator), findsNothing);
+      },
+    );
 
     testWidgets('belowSearchWidget should be null by default', (tester) async {
       await tester.pumpWidget(
@@ -201,25 +203,26 @@ void main() {
     });
 
     testWidgets(
-        'backward compatibility - itemBuilder without searchTerms should work',
-        (tester) async {
-      // This test ensures old code still works
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SmartSearchList<String>(
-              items: const ['Apple'],
-              searchableFields: (item) => [item],
-              // Old style itemBuilder without searchTerms parameter
-              itemBuilder: (context, item, index, {searchTerms = const []}) {
-                return ListTile(title: Text(item));
-              },
+      'backward compatibility - itemBuilder without searchTerms should work',
+      (tester) async {
+        // This test ensures old code still works
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SmartSearchList<String>(
+                items: const ['Apple'],
+                searchableFields: (item) => [item],
+                // Old style itemBuilder without searchTerms parameter
+                itemBuilder: (context, item, index, {searchTerms = const []}) {
+                  return ListTile(title: Text(item));
+                },
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Apple'), findsOneWidget);
-    });
+        expect(find.text('Apple'), findsOneWidget);
+      },
+    );
   });
 }
