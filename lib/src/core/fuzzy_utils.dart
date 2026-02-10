@@ -194,7 +194,8 @@ abstract final class FuzzyMatcher {
     final boundaryBonus = atBoundary ? 1.0 : 0.0;
 
     // Weighted sum.
-    final raw = (consecutiveRatio * 0.50) +
+    final raw =
+        (consecutiveRatio * 0.50) +
         (density * 0.25) +
         (position * 0.15) +
         (boundaryBonus * 0.10);
@@ -261,8 +262,8 @@ abstract final class FuzzyMatcher {
     final positionBonus = 1.0 - (bestWindowStart / tLen);
     final boundaryBonus =
         (bestWindowStart == 0 || _isWordBoundary(t, bestWindowStart))
-            ? 0.1
-            : 0.0;
+        ? 0.1
+        : 0.0;
 
     final score =
         ((0.6 - distancePenalty * 0.3) + boundaryBonus + positionBonus * 0.05)

@@ -29,7 +29,7 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
 
   /// Async data loader (provide either this OR items)
   final Future<List<T>> Function(String query, {int page, int pageSize})?
-      asyncLoader;
+  asyncLoader;
 
   /// Function to extract searchable text from items
   final List<String> Function(T item) searchableFields;
@@ -108,14 +108,14 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
     this.groupComparator,
     this.groupHeaderExtent = 48.0,
     this.accessibilityConfig = const AccessibilityConfiguration(),
-  })  : assert(
-          items == null || asyncLoader == null,
-          'Provide either items OR asyncLoader, not both',
-        ),
-        assert(
-          items != null || asyncLoader != null || controller != null,
-          'Provide items, asyncLoader, or a controller',
-        );
+  }) : assert(
+         items == null || asyncLoader == null,
+         'Provide either items OR asyncLoader, not both',
+       ),
+       assert(
+         items != null || asyncLoader != null || controller != null,
+         'Provide items, asyncLoader, or a controller',
+       );
 
   @override
   State<SliverSmartSearchList<T>> createState() =>
@@ -170,6 +170,60 @@ class _SliverSmartSearchListState<T extends Object>
     _initializeData();
   }
 
+  @override
+  void didUpdateWidget(covariant SliverSmartSearchList<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Only update internally-managed controller
+    if (_controllerCreatedInternally) {
+      // Items changed → re-set (uses reference equality, so a new list
+      // with identical elements will still trigger a re-filter)
+      if (widget.items != oldWidget.items && widget.items != null) {
+        _controller.setItems(widget.items!);
+      }
+
+      // Async loader changed → re-set and reload (refresh clears cache
+      // so stale results from the old loader aren't returned)
+      if (widget.asyncLoader != oldWidget.asyncLoader &&
+          widget.asyncLoader != null) {
+        _controller.setAsyncLoader(widget.asyncLoader!);
+        _controller.refresh();
+      }
+
+      // Search config changes → forward to controller update methods
+      if (widget.searchConfig.caseSensitive !=
+          oldWidget.searchConfig.caseSensitive) {
+        _controller.updateCaseSensitive(widget.searchConfig.caseSensitive);
+      }
+      if (widget.searchConfig.minSearchLength !=
+          oldWidget.searchConfig.minSearchLength) {
+        _controller.updateMinSearchLength(widget.searchConfig.minSearchLength);
+      }
+      if (widget.searchConfig.fuzzySearchEnabled !=
+          oldWidget.searchConfig.fuzzySearchEnabled) {
+        _controller
+            .updateFuzzySearchEnabled(widget.searchConfig.fuzzySearchEnabled);
+      }
+      if (widget.searchConfig.fuzzyThreshold !=
+          oldWidget.searchConfig.fuzzyThreshold) {
+        _controller.updateFuzzyThreshold(widget.searchConfig.fuzzyThreshold);
+      }
+    }
+
+    // External controller swap: detach old, attach new
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller?.removeListener(_onControllerChangedForAnnouncement);
+      oldWidget.controller?.removeListener(_onControllerChanged);
+      if (widget.controller != null) {
+        _controller = widget.controller!;
+        _controller.addListener(_onControllerChanged);
+        if (widget.accessibilityConfig.searchSemanticsEnabled) {
+          _controller.addListener(_onControllerChangedForAnnouncement);
+        }
+      }
+    }
+  }
+
   void _onControllerChanged() {
     if (!_isDisposed && mounted) {
       setState(() {});
@@ -215,7 +269,8 @@ class _SliverSmartSearchListState<T extends Object>
     // Handle loading state (initial load)
     if (_controller.isLoading && _controller.items.isEmpty) {
       return SliverFillRemaining(
-        child: widget.loadingStateBuilder?.call(context) ??
+        child:
+            widget.loadingStateBuilder?.call(context) ??
             const DefaultLoadingWidget(),
       );
     }
@@ -223,7 +278,8 @@ class _SliverSmartSearchListState<T extends Object>
     // Handle error state
     if (_controller.error != null) {
       return SliverFillRemaining(
-        child: widget.errorStateBuilder?.call(
+        child:
+            widget.errorStateBuilder?.call(
               context,
               _controller.error!,
               () => _controller.retry(),
@@ -240,19 +296,19 @@ class _SliverSmartSearchListState<T extends Object>
       // User searched but found nothing
       if (_controller.hasSearched && _controller.searchQuery.isNotEmpty) {
         return SliverFillRemaining(
-          child: widget.emptySearchStateBuilder?.call(
+          child:
+              widget.emptySearchStateBuilder?.call(
                 context,
                 _controller.searchQuery,
               ) ??
-              DefaultEmptySearchWidget(
-                searchQuery: _controller.searchQuery,
-              ),
+              DefaultEmptySearchWidget(searchQuery: _controller.searchQuery),
         );
       }
       // Initial empty state (no data)
       else {
         return SliverFillRemaining(
-          child: widget.emptyStateBuilder?.call(context) ??
+          child:
+              widget.emptyStateBuilder?.call(context) ??
               const DefaultEmptyWidget(),
         );
       }
@@ -335,10 +391,16 @@ class _SliverSmartSearchListState<T extends Object>
               delegate: _GroupHeaderDelegate(
                 maxExtent: widget.groupHeaderExtent,
                 minExtent: widget.groupHeaderExtent,
-                child: widget.groupHeaderBuilder
-                        ?.call(context, key, groupItems.length) ??
+                child:
+                    widget.groupHeaderBuilder?.call(
+                      context,
+                      key,
+                      groupItems.length,
+                    ) ??
                     DefaultGroupHeader(
-                        groupValue: key, itemCount: groupItems.length),
+                      groupValue: key,
+                      itemCount: groupItems.length,
+                    ),
               ),
             ),
             SliverList(
@@ -361,9 +423,7 @@ class _SliverSmartSearchListState<T extends Object>
 
     // Loading more indicator
     if (_controller.isLoadingMore) {
-      slivers.add(
-        const SliverToBoxAdapter(child: DefaultLoadMoreWidget()),
-      );
+      slivers.add(const SliverToBoxAdapter(child: DefaultLoadMoreWidget()));
     }
 
     // MultiSliver requires returning a single widget. Use SliverMainAxisGroup
@@ -401,11 +461,17 @@ class _SliverSmartSearchListState<T extends Object>
 
         if (widget.selectionConfig!.position == CheckboxPosition.leading) {
           itemWidget = Row(
-            children: [checkbox, Expanded(child: itemWidget)],
+            children: [
+              checkbox,
+              Expanded(child: itemWidget),
+            ],
           );
         } else {
           itemWidget = Row(
-            children: [Expanded(child: itemWidget), checkbox],
+            children: [
+              Expanded(child: itemWidget),
+              checkbox,
+            ],
           );
         }
       }
@@ -448,7 +514,10 @@ class _GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return SizedBox.expand(child: child);
   }
 

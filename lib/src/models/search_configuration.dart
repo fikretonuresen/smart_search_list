@@ -65,20 +65,22 @@ class SelectionConfiguration {
 }
 
 /// Builder function for custom search field
-typedef SearchFieldBuilder = Widget Function(
-  BuildContext context,
-  TextEditingController textController,
-  FocusNode focusNode,
-  VoidCallback onClear,
-);
+typedef SearchFieldBuilder =
+    Widget Function(
+      BuildContext context,
+      TextEditingController textController,
+      FocusNode focusNode,
+      VoidCallback onClear,
+    );
 
 /// Builder function for list items
-typedef ItemBuilder<T> = Widget Function(
-  BuildContext context,
-  T item,
-  int index, {
-  List<String> searchTerms,
-});
+typedef ItemBuilder<T> =
+    Widget Function(
+      BuildContext context,
+      T item,
+      int index, {
+      List<String> searchTerms,
+    });
 
 /// Builder function for separators
 typedef SeparatorBuilder = Widget Function(BuildContext context, int index);
@@ -93,11 +95,8 @@ typedef LoadingStateBuilder = Widget Function(BuildContext context);
 /// Builder for the full-screen error state shown when an async operation fails.
 ///
 /// This replaces the entire list area with an error message and retry action.
-typedef ErrorStateBuilder = Widget Function(
-  BuildContext context,
-  Object error,
-  VoidCallback onRetry,
-);
+typedef ErrorStateBuilder =
+    Widget Function(BuildContext context, Object error, VoidCallback onRetry);
 
 /// Builder for the full-screen empty state shown when no data exists.
 ///
@@ -109,28 +108,24 @@ typedef EmptyStateBuilder = Widget Function(BuildContext context);
 ///
 /// This replaces the entire list area. Unlike [EmptyStateBuilder] (no data at all),
 /// this is shown when data exists but the current search query matches nothing.
-typedef EmptySearchStateBuilder = Widget Function(
-  BuildContext context,
-  String searchQuery,
-);
+typedef EmptySearchStateBuilder =
+    Widget Function(BuildContext context, String searchQuery);
 
 /// Builder function for sort controls
-typedef SortBuilder<T> = Widget Function(
-  BuildContext context,
-  int Function(T, T)? currentComparator,
-  void Function(int Function(T, T)?) onSortChanged,
-);
+typedef SortBuilder<T> =
+    Widget Function(
+      BuildContext context,
+      int Function(T, T)? currentComparator,
+      void Function(int Function(T, T)?) onSortChanged,
+    );
 
 /// Builder function for group section headers
 ///
 /// Called for each group when [SmartSearchList.groupBy] is provided.
 /// [groupValue] is the value returned by the `groupBy` function.
 /// [itemCount] is the number of items in this group.
-typedef GroupHeaderBuilder = Widget Function(
-  BuildContext context,
-  Object groupValue,
-  int itemCount,
-);
+typedef GroupHeaderBuilder =
+    Widget Function(BuildContext context, Object groupValue, int itemCount);
 
 /// Builder for an inline progress indicator shown during async operations.
 ///
@@ -148,18 +143,17 @@ typedef GroupHeaderBuilder = Widget Function(
 ///   return const LinearProgressIndicator();
 /// },
 /// ```
-typedef ProgressIndicatorBuilder = Widget Function(
-  BuildContext context,
-  bool isLoading,
-);
+typedef ProgressIndicatorBuilder =
+    Widget Function(BuildContext context, bool isLoading);
 
 /// Builder function for filter controls
-typedef FilterBuilder<T> = Widget Function(
-  BuildContext context,
-  Map<String, bool Function(T)> activeFilters,
-  void Function(String key, bool Function(T) predicate) onFilterChanged,
-  void Function(String key) onFilterRemoved,
-);
+typedef FilterBuilder<T> =
+    Widget Function(
+      BuildContext context,
+      Map<String, bool Function(T)> activeFilters,
+      void Function(String key, bool Function(T) predicate) onFilterChanged,
+      void Function(String key) onFilterRemoved,
+    );
 
 /// Configuration for search behavior
 ///
@@ -255,9 +249,9 @@ class SearchConfiguration {
     this.fuzzySearchEnabled = false,
     this.fuzzyThreshold = 0.3,
   }) : assert(
-          fuzzyThreshold >= 0.0 && fuzzyThreshold <= 1.0,
-          'fuzzyThreshold must be between 0.0 and 1.0',
-        );
+         fuzzyThreshold >= 0.0 && fuzzyThreshold <= 1.0,
+         'fuzzyThreshold must be between 0.0 and 1.0',
+       );
 
   /// Create a copy with modified values
   SearchConfiguration copyWith({

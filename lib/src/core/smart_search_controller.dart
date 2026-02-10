@@ -23,12 +23,15 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     required this.searchableFields,
     this.cacheResults = true,
     this.maxCacheSize = 100,
-    this.caseSensitive = false,
-    this.minSearchLength = 0,
+    bool caseSensitive = false,
+    int minSearchLength = 0,
     this.pageSize = 20,
-    this.fuzzySearchEnabled = false,
-    this.fuzzyThreshold = 0.3,
-  });
+    bool fuzzySearchEnabled = false,
+    double fuzzyThreshold = 0.3,
+  }) : _caseSensitive = caseSensitive,
+       _minSearchLength = minSearchLength,
+       _fuzzySearchEnabled = fuzzySearchEnabled,
+       _fuzzyThreshold = fuzzyThreshold;
 
   /// Delay for search debouncing
   final Duration debounceDelay;
@@ -42,20 +45,26 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   /// Maximum number of cached results
   final int maxCacheSize;
 
-  /// Whether search is case sensitive
-  bool caseSensitive;
-
-  /// Minimum characters to trigger search
-  int minSearchLength;
+  bool _caseSensitive;
+  int _minSearchLength;
 
   /// Page size for pagination
   final int pageSize;
 
+  bool _fuzzySearchEnabled;
+  double _fuzzyThreshold;
+
+  /// Whether search is case sensitive
+  bool get caseSensitive => _caseSensitive;
+
+  /// Minimum characters to trigger search
+  int get minSearchLength => _minSearchLength;
+
   /// Whether fuzzy (subsequence) matching is enabled for offline search
-  bool fuzzySearchEnabled;
+  bool get fuzzySearchEnabled => _fuzzySearchEnabled;
 
   /// Minimum score (0.0 – 1.0) for fuzzy matches to be included
-  double fuzzyThreshold;
+  double get fuzzyThreshold => _fuzzyThreshold;
 
   // Internal state
   List<T> _allItems = [];
@@ -71,7 +80,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   Timer? _debounceTimer;
   int _requestId = 0;
   Future<List<T>> Function(String query, {int page, int pageSize})?
-      _asyncLoader;
+  _asyncLoader;
 
   // Pagination
   int _currentPage = 0;
@@ -83,6 +92,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
   // Filtering and sorting
   final Map<String, bool Function(T)> _activeFilters = {};
+  int _filterVersion = 0;
   int Function(T, T)? _currentComparator;
 
   // Multi-select
@@ -124,9 +134,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
   /// Update case sensitive setting and re-search if needed
   void updateCaseSensitive(bool value) {
-    if (_isDisposed || caseSensitive == value) return;
+    if (_isDisposed || _caseSensitive == value) return;
 
-    caseSensitive = value;
+    _caseSensitive = value;
 
     // Clear cache since case sensitivity affects search results
     _clearCache();
@@ -142,9 +152,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
   /// Update minimum search length and re-search if needed
   void updateMinSearchLength(int value) {
-    if (_isDisposed || minSearchLength == value) return;
+    if (_isDisposed || _minSearchLength == value) return;
 
-    minSearchLength = value;
+    _minSearchLength = value;
 
     // Clear cache since minimum length affects search behavior
     _clearCache();
@@ -264,7 +274,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     if (_isDisposed) return;
 
     // Check minimum search length
-    if (query.isNotEmpty && query.length < minSearchLength) {
+    if (query.isNotEmpty && query.length < _minSearchLength) {
       return;
     }
 
@@ -337,14 +347,16 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
     // Apply search
     if (_searchQuery.isNotEmpty) {
-      if (fuzzySearchEnabled) {
+      if (_fuzzySearchEnabled) {
         filtered = _fuzzySearch(filtered);
       } else {
-        final query = caseSensitive ? _searchQuery : _searchQuery.toLowerCase();
+        final query = _caseSensitive
+            ? _searchQuery
+            : _searchQuery.toLowerCase();
         filtered = filtered.where((item) {
           final searchableTexts = searchableFields(item);
           return searchableTexts.any((text) {
-            final searchText = caseSensitive ? text : text.toLowerCase();
+            final searchText = _caseSensitive ? text : text.toLowerCase();
             return searchText.contains(query);
           });
         }).toList();
@@ -364,7 +376,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   /// Items are sorted descending by best match score. Exact substring
   /// matches always score 1.0 and appear first.
   List<T> _fuzzySearch(List<T> items) {
-    final threshold = fuzzyThreshold;
+    final threshold = _fuzzyThreshold;
     final scored = <_ScoredItem<T>>[];
 
     for (final item in items) {
@@ -372,7 +384,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
       final result = FuzzyMatcher.matchFields(
         _searchQuery,
         fields,
-        caseSensitive: caseSensitive,
+        caseSensitive: _caseSensitive,
       );
       if (result != null && result.score >= threshold) {
         scored.add(_ScoredItem(item, result.score));
@@ -390,6 +402,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     if (_isDisposed) return;
 
     _activeFilters[key] = predicate;
+    _filterVersion++;
     _performSearch(_searchQuery);
   }
 
@@ -398,6 +411,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     if (_isDisposed) return;
 
     _activeFilters.remove(key);
+    _filterVersion++;
     _performSearch(_searchQuery);
   }
 
@@ -406,6 +420,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     if (_isDisposed) return;
 
     _activeFilters.clear();
+    _filterVersion++;
     _performSearch(_searchQuery);
   }
 
@@ -473,7 +488,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   /// Clear search
   void clearSearch() {
     if (_isDisposed) return;
-    search('');
+    searchImmediate('');
   }
 
   /// Retry after error
@@ -485,7 +500,8 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   }
 
   String _getCacheKey() {
-    return '${_searchQuery}_${_currentPage}_${_activeFilters.length}';
+    final filterKeys = _activeFilters.keys.toList()..sort();
+    return '${_searchQuery}_${_currentPage}_${filterKeys.join(',')}_fv$_filterVersion';
   }
 
   void _addToCache(String key, List<T> items) {
@@ -523,9 +539,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
   /// Update fuzzy search enabled state and re-search if needed
   void updateFuzzySearchEnabled(bool value) {
-    if (_isDisposed || fuzzySearchEnabled == value) return;
+    if (_isDisposed || _fuzzySearchEnabled == value) return;
 
-    fuzzySearchEnabled = value;
+    _fuzzySearchEnabled = value;
     _clearCache();
 
     if (_searchQuery.isNotEmpty) {
@@ -538,9 +554,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
   /// Update fuzzy threshold and re-search if needed
   void updateFuzzyThreshold(double value) {
-    if (_isDisposed || fuzzyThreshold == value) return;
+    if (_isDisposed || _fuzzyThreshold == value) return;
 
-    fuzzyThreshold = value;
+    _fuzzyThreshold = value;
     _clearCache();
 
     if (_searchQuery.isNotEmpty) {

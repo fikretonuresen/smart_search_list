@@ -83,7 +83,8 @@ class SearchHighlightText extends StatelessWidget {
       );
     }
 
-    final effectiveMatchStyle = matchStyle ??
+    final effectiveMatchStyle =
+        matchStyle ??
         (style ?? DefaultTextStyle.of(context).style).copyWith(
           fontWeight: FontWeight.bold,
           backgroundColor:
@@ -173,10 +174,12 @@ class SearchHighlightText extends StatelessWidget {
       while (i < text.length && matched[i] == isMatch) {
         i++;
       }
-      spans.add(TextSpan(
-        text: text.substring(start, i),
-        style: isMatch ? matchStyle : null,
-      ));
+      spans.add(
+        TextSpan(
+          text: text.substring(start, i),
+          style: isMatch ? matchStyle : null,
+        ),
+      );
     }
 
     return spans;

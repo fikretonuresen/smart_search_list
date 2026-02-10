@@ -72,7 +72,8 @@ class DefaultSearchField extends StatelessWidget {
           }
 
           // Build the base decoration
-          final effectiveDecoration = configuration.decoration ??
+          final effectiveDecoration =
+              configuration.decoration ??
               InputDecoration(
                 hintText: configuration.hintText,
                 prefixIcon: const Icon(Icons.search),
@@ -87,11 +88,11 @@ class DefaultSearchField extends StatelessWidget {
           // Apply semantic label if provided
           final decorationWithLabel =
               accessibilityConfig.searchFieldLabel != null &&
-                      configuration.decoration == null
-                  ? effectiveDecoration.copyWith(
-                      labelText: accessibilityConfig.searchFieldLabel,
-                    )
-                  : effectiveDecoration;
+                  configuration.decoration == null
+              ? effectiveDecoration.copyWith(
+                  labelText: accessibilityConfig.searchFieldLabel,
+                )
+              : effectiveDecoration;
 
           return TextField(
             controller: controller,
@@ -118,9 +119,7 @@ class DefaultLoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 }
 
@@ -160,8 +159,8 @@ class DefaultErrorWidget extends StatelessWidget {
             Text(
               error.toString(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -200,15 +199,15 @@ class DefaultEmptyWidget extends StatelessWidget {
             Text(
               'No items to display',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'There are currently no items available.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -224,10 +223,7 @@ class DefaultEmptyWidget extends StatelessWidget {
 class DefaultEmptySearchWidget extends StatelessWidget {
   final String searchQuery;
 
-  const DefaultEmptySearchWidget({
-    super.key,
-    required this.searchQuery,
-  });
+  const DefaultEmptySearchWidget({super.key, required this.searchQuery});
 
   @override
   Widget build(BuildContext context) {
@@ -246,8 +242,8 @@ class DefaultEmptySearchWidget extends StatelessWidget {
             Text(
               'No results found',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -255,8 +251,8 @@ class DefaultEmptySearchWidget extends StatelessWidget {
                   ? 'Try a different search term.'
                   : 'No items match "$searchQuery".\nTry a different search term.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -313,9 +309,7 @@ class DefaultLoadMoreWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.all(16.0),
-      child: Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 }

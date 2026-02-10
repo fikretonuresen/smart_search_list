@@ -1,3 +1,20 @@
+## 0.6.0
+
+🐛 **Bug Fixes & Widget Tests** - Widgets now react to prop changes, cache key correctness fix, and first widget-level test coverage.
+
+### 🐛 Bug Fixes
+- **`didUpdateWidget` support**: `SmartSearchList` and `SliverSmartSearchList` now react to parent rebuilds — changing `items`, `asyncLoader`, `caseSensitive`, `minSearchLength`, `fuzzySearchEnabled`, `fuzzyThreshold`, or swapping an external controller after initial build now works correctly
+- **Cache key fix**: Calling `setFilter` with the same key but a different predicate no longer returns stale cached results — cache key now includes a filter predicate version counter
+
+### 🧪 Tests
+- **11 widget-level test scenarios** covering rendering, filtering, empty/error states, `didUpdateWidget` (items and async loader swap), selection, grouping, pagination, and disposal safety
+
+### ⚡ Backward Compatibility
+- No public API changes — all fixes are internal behavior corrections
+- Existing code continues to work without modifications
+
+---
+
 ## 0.5.1
 
 🔧 **Improved Screen Reader Announcements** - More reliable TalkBack/VoiceOver support.
@@ -200,9 +217,7 @@ Find-and-replace in your code:
 
 ## 0.1.0
 
-🧪 **Initial testing release** - A high-performance, zero-dependency searchable list package for Flutter. Ready for production testing and feedback.
-
-> **Note**: This is a testing release. The package is technically solid but needs real-world validation. Please test in your apps and provide feedback before we publish the stable 1.0.0 version.
+**Initial release** - A high-performance, zero-dependency searchable list package for Flutter. Ready for production testing and feedback.
 
 ### ✨ Features
 - **High Performance**: Tested with 10,000+ items at 60 FPS

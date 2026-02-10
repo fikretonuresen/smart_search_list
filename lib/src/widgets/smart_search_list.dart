@@ -15,7 +15,9 @@ import 'default_widgets.dart';
 /// SmartSearchList<String>(
 ///   items: ['Apple', 'Banana', 'Cherry'],
 ///   searchableFields: (item) => [item],
-///   itemBuilder: (context, item, index) => ListTile(title: Text(item)),
+///   itemBuilder: (context, item, index, {searchTerms = const []}) {
+///     return ListTile(title: Text(item));
+///   },
 /// )
 /// ```
 class SmartSearchList<T extends Object> extends StatefulWidget {
@@ -24,7 +26,7 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
 
   /// Async data loader (provide either this OR items)
   final Future<List<T>> Function(String query, {int page, int pageSize})?
-      asyncLoader;
+  asyncLoader;
 
   /// Function to extract searchable text from items
   final List<String> Function(T item) searchableFields;
@@ -127,11 +129,11 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
     this.groupComparator,
     this.accessibilityConfig = const AccessibilityConfiguration(),
   }) : assert(
-          controller != null ||
-              ((items != null && asyncLoader == null) ||
-                  (items == null && asyncLoader != null)),
-          'Provide either items OR asyncLoader, not both (unless using external controller)',
-        );
+         controller != null ||
+             ((items != null && asyncLoader == null) ||
+                 (items == null && asyncLoader != null)),
+         'Provide either items OR asyncLoader, not both (unless using external controller)',
+       );
 
   @override
   State<SmartSearchList<T>> createState() => _SmartSearchListState<T>();
@@ -205,6 +207,58 @@ class _SmartSearchListState<T extends Object>
 
     // Initialize data
     _initializeData();
+  }
+
+  @override
+  void didUpdateWidget(covariant SmartSearchList<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Only update internally-managed controller
+    if (_controllerCreatedInternally) {
+      // Items changed → re-set (uses reference equality, so a new list
+      // with identical elements will still trigger a re-filter)
+      if (widget.items != oldWidget.items && widget.items != null) {
+        _controller.setItems(widget.items!);
+      }
+
+      // Async loader changed → re-set and reload (refresh clears cache
+      // so stale results from the old loader aren't returned)
+      if (widget.asyncLoader != oldWidget.asyncLoader &&
+          widget.asyncLoader != null) {
+        _controller.setAsyncLoader(widget.asyncLoader!);
+        _controller.refresh();
+      }
+
+      // Search config changes → forward to controller update methods
+      if (widget.searchConfig.caseSensitive !=
+          oldWidget.searchConfig.caseSensitive) {
+        _controller.updateCaseSensitive(widget.searchConfig.caseSensitive);
+      }
+      if (widget.searchConfig.minSearchLength !=
+          oldWidget.searchConfig.minSearchLength) {
+        _controller.updateMinSearchLength(widget.searchConfig.minSearchLength);
+      }
+      if (widget.searchConfig.fuzzySearchEnabled !=
+          oldWidget.searchConfig.fuzzySearchEnabled) {
+        _controller
+            .updateFuzzySearchEnabled(widget.searchConfig.fuzzySearchEnabled);
+      }
+      if (widget.searchConfig.fuzzyThreshold !=
+          oldWidget.searchConfig.fuzzyThreshold) {
+        _controller.updateFuzzyThreshold(widget.searchConfig.fuzzyThreshold);
+      }
+    }
+
+    // External controller swap: detach old, attach new
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller?.removeListener(_onControllerChangedForAnnouncement);
+      if (widget.controller != null) {
+        _controller = widget.controller!;
+        if (widget.accessibilityConfig.searchSemanticsEnabled) {
+          _controller.addListener(_onControllerChangedForAnnouncement);
+        }
+      }
+    }
   }
 
   void _initializeData() {
@@ -429,9 +483,7 @@ class _SmartSearchListState<T extends Object>
               context,
               _controller.searchQuery,
             ) ??
-            DefaultEmptySearchWidget(
-              searchQuery: _controller.searchQuery,
-            );
+            DefaultEmptySearchWidget(searchQuery: _controller.searchQuery);
       }
       // Initial empty state (no data)
       else {
@@ -456,8 +508,10 @@ class _SmartSearchListState<T extends Object>
 
   Widget _buildListView() {
     // Compute search terms once for all items
-    final searchTerms =
-        _controller.searchQuery.split(' ').where((s) => s.isNotEmpty).toList();
+    final searchTerms = _controller.searchQuery
+        .split(' ')
+        .where((s) => s.isNotEmpty)
+        .toList();
 
     // Grouped rendering
     if (widget.groupBy != null) {
@@ -546,13 +600,20 @@ class _SmartSearchListState<T extends Object>
       itemCount: _totalGroupedItemCount(groupOrder, groupMap),
       itemBuilder: (context, flatIndex) {
         return _groupedItemBuilder(
-            context, flatIndex, groupOrder, groupMap, searchTerms);
+          context,
+          flatIndex,
+          groupOrder,
+          groupMap,
+          searchTerms,
+        );
       },
     );
   }
 
   int _totalGroupedItemCount(
-      List<Object> groupOrder, Map<Object, List<_IndexedItem<T>>> groupMap) {
+    List<Object> groupOrder,
+    Map<Object, List<_IndexedItem<T>>> groupMap,
+  ) {
     int count = 0;
     for (final key in groupOrder) {
       count += 1 + groupMap[key]!.length; // 1 header + items
@@ -573,8 +634,11 @@ class _SmartSearchListState<T extends Object>
       final groupItems = groupMap[key]!;
       if (flatIndex == current) {
         // This is a group header
-        return widget.groupHeaderBuilder
-                ?.call(context, key, groupItems.length) ??
+        return widget.groupHeaderBuilder?.call(
+              context,
+              key,
+              groupItems.length,
+            ) ??
             DefaultGroupHeader(groupValue: key, itemCount: groupItems.length);
       }
       current += 1; // header
@@ -591,7 +655,10 @@ class _SmartSearchListState<T extends Object>
   }
 
   Widget _itemBuilder(
-      BuildContext context, int index, List<String> searchTerms) {
+    BuildContext context,
+    int index,
+    List<String> searchTerms,
+  ) {
     // Handle loading more indicator
     if (index >= _controller.items.length) {
       return const DefaultLoadMoreWidget();
@@ -620,11 +687,17 @@ class _SmartSearchListState<T extends Object>
 
         if (widget.selectionConfig!.position == CheckboxPosition.leading) {
           itemWidget = Row(
-            children: [checkbox, Expanded(child: itemWidget)],
+            children: [
+              checkbox,
+              Expanded(child: itemWidget),
+            ],
           );
         } else {
           itemWidget = Row(
-            children: [Expanded(child: itemWidget), checkbox],
+            children: [
+              Expanded(child: itemWidget),
+              checkbox,
+            ],
           );
         }
       }
