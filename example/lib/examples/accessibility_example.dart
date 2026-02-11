@@ -69,33 +69,38 @@ class _AccessibilityExampleState extends State<AccessibilityExample> {
         children: [
           Card(
             margin: const EdgeInsets.all(16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Accessibility & Localization',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Enable TalkBack (Android) or VoiceOver (iOS) to hear '
-                    'semantic labels and result count announcements.',
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    title: const Text('Spanish Labels'),
-                    subtitle: Text(
-                      _useSpanish
-                          ? '"Buscar frutas", "Sin resultados"'
-                          : 'English defaults: "Search...", "No results found"',
-                    ),
-                    value: _useSpanish,
-                    onChanged: (v) => setState(() => _useSpanish = v),
-                  ),
-                ],
+            child: ExpansionTile(
+              title: Text(
+                'Accessibility & Localization',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Enable TalkBack (Android) or VoiceOver (iOS) to hear '
+                        'semantic labels and result count announcements.',
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile(
+                        title: const Text('Spanish Labels'),
+                        subtitle: Text(
+                          _useSpanish
+                              ? '"Buscar frutas", "Sin resultados"'
+                              : 'English defaults: "Search...", "No results found"',
+                        ),
+                        value: _useSpanish,
+                        onChanged: (v) => setState(() => _useSpanish = v),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(

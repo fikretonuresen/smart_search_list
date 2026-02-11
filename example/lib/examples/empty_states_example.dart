@@ -30,23 +30,28 @@ class _EmptyStatesExampleState extends State<EmptyStatesExample> {
           // Explanation card
           Card(
             margin: const EdgeInsets.all(16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Two Different Empty States',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '"No data" state: When list is initially empty\n'
-                    '"No search results" state: When search finds nothing\n'
-                    'Toggle data with the button above to see both states',
-                  ),
-                ],
+            child: ExpansionTile(
+              title: Text(
+                'Two Different Empty States',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '"No data" state: When list is initially empty\n'
+                        '"No search results" state: When search finds nothing\n'
+                        'Toggle data with the button above to see both states',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           // Smart search list

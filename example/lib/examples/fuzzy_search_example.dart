@@ -60,43 +60,48 @@ class _FuzzySearchExampleState extends State<FuzzySearchExample> {
           // Controls
           Card(
             margin: const EdgeInsets.all(16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Fuzzy Search Settings',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  SwitchListTile(
-                    title: const Text('Fuzzy Search'),
-                    subtitle: Text(
-                      _fuzzyEnabled
-                          ? 'Try "apl" to find Apple'
-                          : 'Exact substring matching only',
-                    ),
-                    value: _fuzzyEnabled,
-                    onChanged: (v) => setState(() => _fuzzyEnabled = v),
-                  ),
-                  Text(
-                    'Threshold: ${_threshold.toStringAsFixed(1)} (${_threshold < 0.3
-                        ? "lenient"
-                        : _threshold > 0.6
-                        ? "strict"
-                        : "balanced"})',
-                  ),
-                  Slider(
-                    value: _threshold,
-                    min: 0.1,
-                    max: 0.9,
-                    divisions: 8,
-                    label: _threshold.toStringAsFixed(1),
-                    onChanged: (v) => setState(() => _threshold = v),
-                  ),
-                ],
+            child: ExpansionTile(
+              title: Text(
+                'Fuzzy Search Settings',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Fuzzy Search'),
+                        subtitle: Text(
+                          _fuzzyEnabled
+                              ? 'Try "apl" to find Apple'
+                              : 'Exact substring matching only',
+                        ),
+                        value: _fuzzyEnabled,
+                        onChanged: (v) => setState(() => _fuzzyEnabled = v),
+                      ),
+                      Text(
+                        'Threshold: ${_threshold.toStringAsFixed(1)} (${_threshold < 0.3
+                            ? "lenient"
+                            : _threshold > 0.6
+                            ? "strict"
+                            : "balanced"})',
+                      ),
+                      Slider(
+                        value: _threshold,
+                        min: 0.1,
+                        max: 0.9,
+                        divisions: 8,
+                        label: _threshold.toStringAsFixed(1),
+                        onChanged: (v) => setState(() => _threshold = v),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           // List

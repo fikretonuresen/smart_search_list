@@ -32,27 +32,32 @@ class _AsyncApiExampleState extends State<AsyncApiExample> {
           // Info card
           Card(
             margin: const EdgeInsets.all(16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Async API Demo',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _simulateErrors
-                        ? 'Error simulation enabled - API calls will fail randomly'
-                        : 'Normal mode - API calls work properly',
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Search to trigger API calls. Pull down to refresh.',
-                  ),
-                ],
+            child: ExpansionTile(
+              title: Text(
+                'Async API Demo',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _simulateErrors
+                            ? 'Error simulation enabled - API calls will fail randomly'
+                            : 'Normal mode - API calls work properly',
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Search to trigger API calls. Pull down to refresh.',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(

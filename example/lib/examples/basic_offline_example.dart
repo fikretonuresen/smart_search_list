@@ -56,40 +56,45 @@ class _BasicOfflineExampleState extends State<BasicOfflineExample> {
           // Configuration controls
           Card(
             margin: const EdgeInsets.all(16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Search Configuration',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    title: const Text('Case Sensitive'),
-                    subtitle: Text(
-                      _caseSensitive
-                          ? 'Try "Apple" vs "apple"'
-                          : 'Search ignores case',
-                    ),
-                    value: _caseSensitive,
-                    onChanged: (value) =>
-                        setState(() => _caseSensitive = value),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Min Search Length: $_minSearchLength'),
-                  Slider(
-                    value: _minSearchLength.toDouble(),
-                    min: 0,
-                    max: 3,
-                    divisions: 3,
-                    label: _minSearchLength.toString(),
-                    onChanged: (value) =>
-                        setState(() => _minSearchLength = value.round()),
-                  ),
-                ],
+            child: ExpansionTile(
+              title: Text(
+                'Search Configuration',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Case Sensitive'),
+                        subtitle: Text(
+                          _caseSensitive
+                              ? 'Try "Apple" vs "apple"'
+                              : 'Search ignores case',
+                        ),
+                        value: _caseSensitive,
+                        onChanged: (value) =>
+                            setState(() => _caseSensitive = value),
+                      ),
+                      const SizedBox(height: 8),
+                      Text('Min Search Length: $_minSearchLength'),
+                      Slider(
+                        value: _minSearchLength.toDouble(),
+                        min: 0,
+                        max: 3,
+                        divisions: 3,
+                        label: _minSearchLength.toString(),
+                        onChanged: (value) =>
+                            setState(() => _minSearchLength = value.round()),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           // Search list

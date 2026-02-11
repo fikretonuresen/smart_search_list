@@ -52,22 +52,27 @@ class SliverExample extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'SliverSmartSearchList Demo',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'This demonstrates SliverSmartSearchList integrated with '
-                        'CustomScrollView, working alongside SliverAppBar and other slivers.',
-                      ),
-                    ],
+                child: ExpansionTile(
+                  title: Text(
+                    'SliverSmartSearchList Demo',
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'This demonstrates SliverSmartSearchList integrated with '
+                            'CustomScrollView, working alongside SliverAppBar and other slivers.',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

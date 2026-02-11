@@ -55,67 +55,74 @@ class _AdvancedConfigExampleState extends State<AdvancedConfigExample> {
           // Configuration controls
           Card(
             margin: const EdgeInsets.all(16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Search Configuration',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    title: const Text('Case Sensitive Search'),
-                    subtitle: const Text('Try searching "apple" vs "APPLE"'),
-                    value: _caseSensitive,
-                    onChanged: (value) {
-                      setState(() => _caseSensitive = value);
-                      _controller.updateCaseSensitive(value);
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Minimum Search Length: $_minSearchLength'),
-                  Slider(
-                    value: _minSearchLength.toDouble(),
-                    min: 0,
-                    max: 5,
-                    divisions: 5,
-                    label: _minSearchLength.toString(),
-                    onChanged: (value) {
-                      setState(() => _minSearchLength = value.round());
-                      _controller.updateMinSearchLength(value.round());
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
+            child: ExpansionTile(
+              title: Text(
+                'Search Configuration',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: ListenableBuilder(
-                          listenable: _controller,
-                          builder: (context, _) {
-                            return Text(
-                              'Active Filters: ${_controller.activeFilters.length}',
-                            );
-                          },
+                      SwitchListTile(
+                        title: const Text('Case Sensitive Search'),
+                        subtitle: const Text(
+                          'Try searching "apple" vs "APPLE"',
                         ),
+                        value: _caseSensitive,
+                        onChanged: (value) {
+                          setState(() => _caseSensitive = value);
+                          _controller.updateCaseSensitive(value);
+                        },
                       ),
-                      ElevatedButton(
-                        onPressed: () => _controller.setFilter(
-                          'apple_only',
-                          (item) => item.toLowerCase().contains('apple'),
-                        ),
-                        child: const Text('Filter Apple'),
+                      const SizedBox(height: 8),
+                      Text('Minimum Search Length: $_minSearchLength'),
+                      Slider(
+                        value: _minSearchLength.toDouble(),
+                        min: 0,
+                        max: 5,
+                        divisions: 5,
+                        label: _minSearchLength.toString(),
+                        onChanged: (value) {
+                          setState(() => _minSearchLength = value.round());
+                          _controller.updateMinSearchLength(value.round());
+                        },
                       ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () => _controller.clearFilters(),
-                        child: const Text('Clear'),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ListenableBuilder(
+                              listenable: _controller,
+                              builder: (context, _) {
+                                return Text(
+                                  'Active Filters: ${_controller.activeFilters.length}',
+                                );
+                              },
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => _controller.setFilter(
+                              'apple_only',
+                              (item) => item.toLowerCase().contains('apple'),
+                            ),
+                            child: const Text('Filter Apple'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () => _controller.clearFilters(),
+                            child: const Text('Clear'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           // Smart search list with external controller

@@ -55,37 +55,55 @@ class _SearchTriggerModeExampleState extends State<SearchTriggerModeExample> {
       body: Column(
         children: [
           // Mode toggle
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SegmentedButton<SearchTriggerMode>(
-              segments: const [
-                ButtonSegment(
-                  value: SearchTriggerMode.onEdit,
-                  label: Text('onEdit (live)'),
-                  icon: Icon(Icons.edit),
-                ),
-                ButtonSegment(
-                  value: SearchTriggerMode.onSubmit,
-                  label: Text('onSubmit'),
-                  icon: Icon(Icons.keyboard_return),
+          Card(
+            margin: const EdgeInsets.all(16.0),
+            child: ExpansionTile(
+              title: Text(
+                'Search Trigger Mode',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SegmentedButton<SearchTriggerMode>(
+                        segments: const [
+                          ButtonSegment(
+                            value: SearchTriggerMode.onEdit,
+                            label: Text('onEdit (live)'),
+                            icon: Icon(Icons.edit),
+                          ),
+                          ButtonSegment(
+                            value: SearchTriggerMode.onSubmit,
+                            label: Text('onSubmit'),
+                            icon: Icon(Icons.keyboard_return),
+                          ),
+                        ],
+                        selected: {_mode},
+                        onSelectionChanged: (modes) {
+                          setState(() => _mode = modes.first);
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _mode == SearchTriggerMode.onEdit
+                            ? 'List filters automatically as you type.'
+                            : 'Type your query, then press Enter or tap the search icon.',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-              selected: {_mode},
-              onSelectionChanged: (modes) {
-                setState(() => _mode = modes.first);
-              },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              _mode == SearchTriggerMode.onEdit
-                  ? 'List filters automatically as you type.'
-                  : 'Type your query, then press Enter or tap the search icon.',
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-          ),
-          const SizedBox(height: 8),
           Expanded(
             // Key forces widget rebuild when mode changes
             child: SmartSearchList<String>(
