@@ -36,6 +36,16 @@ flutter pub add smart_search_list
 
 Requires Flutter 3.35.0 or higher.
 
+## Upgrading from v0.6.x
+
+v0.7.0 introduced named constructors for compile-time mode enforcement. Migration is straightforward:
+
+- **Offline lists** (items + searchableFields): No change needed. The default constructor is identical.
+- **Async loading** (asyncLoader): Change to `SmartSearchList.async(asyncLoader: ...)` and remove `searchableFields:`.
+- **External controller**: Change to `SmartSearchList.controller(controller: ...)`. Pass `searchableFields`, `debounceDelay`, and fuzzy/case settings to the controller constructor instead of `searchConfig`.
+
+See the [CHANGELOG](CHANGELOG.md) for full migration details with code examples.
+
 ## Quick Start
 
 ### Offline List

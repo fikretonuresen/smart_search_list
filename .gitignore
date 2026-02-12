@@ -33,7 +33,6 @@ migrate_working_dir/
 # Example app - regenerable platform folders and generated files
 # Run "flutter create ." inside example/ to regenerate
 example/.metadata
-example/README.md
 example/analysis_options.yaml
 example/pubspec.lock
 example/android/

@@ -1,3 +1,23 @@
+## 0.7.2 - 2026-02-12
+
+Pre-publish polish: migration guide, SearchHighlightText test coverage, and pub.dev archive optimization.
+
+### Documentation
+- **Migration guide**: Added "Upgrading from v0.6.x" section to README with constructor migration instructions
+- **GIF exclusion**: Added `doc/images/*.gif` to `.pubignore` to save ~2.3 MB from pub.dev archive (GIFs load from GitHub raw URLs)
+- **Example README**: Replaced boilerplate with table listing all 14 demos
+
+### Tests
+- **SearchHighlightText tests**: 15 new tests covering exact/multi-term/overlapping highlighting, fuzzy matching, case sensitivity, custom styles, empty/no-match edge cases, and Unicode (accented, CJK)
+- **Null searchableFields test**: Verifies controller with `searchableFields: null` passes all items through unfiltered on search
+- **Sliver offline constructor test**: Verifies offline constructor initializes data and handles item changes via `didUpdateWidget`
+- 204 tests total (up from 187)
+
+### Backward Compatibility
+- No breaking changes. No library code changes.
+
+---
+
 ## 0.7.1 - 2026-02-12
 
 README rewrite for pub.dev readiness with problem-solution opening, vertical GIF layout, and .controller() example.
@@ -14,6 +34,8 @@ README rewrite for pub.dev readiness with problem-solution opening, vertical GIF
 
 ### Backward Compatibility
 - No breaking changes. No library code changes.
+
+---
 
 ## 0.7.0 - 2026-02-12
 
@@ -43,6 +65,8 @@ Named constructors replace nullable params and runtime assertions with compile-t
 ### Backward Compatibility
 - The default constructor signature is unchanged for offline mode -- existing offline code compiles without modification.
 - This is a breaking change for async, controller, and mixed-mode usage patterns.
+
+---
 
 ## 0.6.1 - 2026-02-10
 

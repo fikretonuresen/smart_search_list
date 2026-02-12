@@ -1149,6 +1149,57 @@ void main() {
     // Async data loading
     // -----------------------------------------------------------------------
 
+    testWidgets('offline constructor initializes data and filters correctly', (
+      tester,
+    ) async {
+      // Use StatefulBuilder to swap items and trigger didUpdateWidget,
+      // verifying the offline constructor's _initializeData() path.
+      var items = const ['Apple', 'Banana', 'Cherry', 'Date'];
+      late StateSetter rebuildParent;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                rebuildParent = setState;
+                return CustomScrollView(
+                  slivers: [
+                    SliverSmartSearchList<String>(
+                      items: items,
+                      searchableFields: (item) => [item],
+                      itemBuilder:
+                          (context, item, index, {searchTerms = const []}) {
+                            return ListTile(title: Text(item));
+                          },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // All items visible initially
+      expect(find.text('Apple'), findsOneWidget);
+      expect(find.text('Banana'), findsOneWidget);
+      expect(find.text('Cherry'), findsOneWidget);
+      expect(find.text('Date'), findsOneWidget);
+
+      // Change items to verify offline constructor re-initializes
+      rebuildParent(() {
+        items = const ['Fig', 'Grape'];
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('Fig'), findsOneWidget);
+      expect(find.text('Grape'), findsOneWidget);
+      expect(find.text('Apple'), findsNothing);
+      expect(find.text('Cherry'), findsNothing);
+    });
+
     testWidgets('loads and displays async data', (tester) async {
       await tester.pumpWidget(
         MaterialApp(

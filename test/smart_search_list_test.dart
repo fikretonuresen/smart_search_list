@@ -302,6 +302,27 @@ void main() {
       controller.dispose();
     });
 
+    test(
+      'should pass through all items when searchableFields is null',
+      () async {
+        final controller = SmartSearchController<String>(
+          searchableFields: null,
+          debounceDelay: const Duration(milliseconds: 10),
+        );
+
+        controller.setItems(['Apple', 'Banana', 'Cherry']);
+
+        // Search should not throw and all items should pass through unfiltered
+        controller.search('Apple');
+        await Future.delayed(const Duration(milliseconds: 20));
+
+        expect(controller.items.length, 3);
+        expect(controller.items, containsAll(['Apple', 'Banana', 'Cherry']));
+
+        controller.dispose();
+      },
+    );
+
     test('should refresh data correctly', () async {
       final controller = SmartSearchController<String>(
         searchableFields: (item) => [item],
