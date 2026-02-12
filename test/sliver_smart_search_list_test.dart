@@ -73,14 +73,14 @@ void main() {
         debounceDelay: const Duration(milliseconds: 10),
       );
 
+      controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Banana', 'Cherry'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
@@ -117,14 +117,14 @@ void main() {
         debounceDelay: const Duration(milliseconds: 300),
       );
 
+      controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Banana', 'Cherry'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
@@ -155,14 +155,14 @@ void main() {
         debounceDelay: const Duration(milliseconds: 10),
       );
 
+      controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Banana', 'Cherry'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
@@ -204,14 +204,14 @@ void main() {
 
       List<String> capturedTerms = [];
 
+      controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Banana', 'Cherry'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
@@ -248,15 +248,14 @@ void main() {
 
       List<String> capturedTerms = [];
 
+      controller.setItems(const ['red apple', 'green apple', 'red banana']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  // Use items that would match both terms together
-                  items: const ['red apple', 'green apple', 'red banana'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
@@ -291,14 +290,14 @@ void main() {
 
         List<String> capturedTerms = ['placeholder'];
 
+        controller.setItems(const ['Apple', 'Banana']);
+
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: CustomScrollView(
                 slivers: [
-                  SliverSmartSearchList<String>(
-                    items: const ['Apple', 'Banana'],
-                    searchableFields: (item) => [item],
+                  SliverSmartSearchList<String>.controller(
                     controller: controller,
                     itemBuilder:
                         (context, item, index, {searchTerms = const []}) {
@@ -338,14 +337,14 @@ void main() {
 
         final termsPerItem = <String, List<String>>{};
 
+        controller.setItems(const ['Apple pie', 'Apple juice', 'Apple sauce']);
+
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: CustomScrollView(
                 slivers: [
-                  SliverSmartSearchList<String>(
-                    items: const ['Apple pie', 'Apple juice', 'Apple sauce'],
-                    searchableFields: (item) => [item],
+                  SliverSmartSearchList<String>.controller(
                     controller: controller,
                     itemBuilder:
                         (context, item, index, {searchTerms = const []}) {
@@ -442,14 +441,14 @@ void main() {
         debounceDelay: const Duration(milliseconds: 10),
       );
 
+      controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Banana', 'Cherry'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   emptySearchStateBuilder: (context, query) {
                     return Text('No results for "$query"');
@@ -483,14 +482,14 @@ void main() {
         debounceDelay: const Duration(milliseconds: 10),
       );
 
+      controller.setItems(const ['Apple', 'Banana']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Banana'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
@@ -625,14 +624,14 @@ void main() {
         debounceDelay: const Duration(milliseconds: 10),
       );
 
+      controller.setItems(const ['Apple', 'Avocado', 'Banana', 'Blueberry']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Avocado', 'Banana', 'Blueberry'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   groupBy: (item) => item[0],
                   itemBuilder:
@@ -675,14 +674,14 @@ void main() {
 
       List<String> capturedTerms = [];
 
+      controller.setItems(const ['Apple', 'Avocado', 'Banana']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Avocado', 'Banana'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   groupBy: (item) => item[0],
                   itemBuilder:
@@ -717,12 +716,11 @@ void main() {
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
+                SliverSmartSearchList<String>.async(
                   asyncLoader:
                       (query, {int page = 0, int pageSize = 20}) async {
                         throw Exception('Network failure');
                       },
-                  searchableFields: (item) => [item],
                   searchConfig: const SearchConfiguration(
                     debounceDelay: Duration(milliseconds: 10),
                   ),
@@ -755,12 +753,11 @@ void main() {
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
+                SliverSmartSearchList<String>.async(
                   asyncLoader:
                       (query, {int page = 0, int pageSize = 20}) async {
                         throw Exception('Server error');
                       },
-                  searchableFields: (item) => [item],
                   searchConfig: const SearchConfiguration(
                     debounceDelay: Duration(milliseconds: 10),
                   ),
@@ -795,13 +792,12 @@ void main() {
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
+                SliverSmartSearchList<String>.async(
                   asyncLoader:
                       (query, {int page = 0, int pageSize = 20}) async {
                         await Future.delayed(const Duration(milliseconds: 500));
                         return ['Item 1'];
                       },
-                  searchableFields: (item) => [item],
                   searchConfig: const SearchConfiguration(
                     debounceDelay: Duration(milliseconds: 10),
                   ),
@@ -838,13 +834,12 @@ void main() {
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
+                SliverSmartSearchList<String>.async(
                   asyncLoader:
                       (query, {int page = 0, int pageSize = 20}) async {
                         await Future.delayed(const Duration(milliseconds: 500));
                         return ['Item 1'];
                       },
-                  searchableFields: (item) => [item],
                   searchConfig: const SearchConfiguration(
                     debounceDelay: Duration(milliseconds: 10),
                   ),
@@ -999,14 +994,14 @@ void main() {
         searchableFields: (item) => [item],
       );
 
+      controller.setItems(const ['Apple', 'Banana']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Banana'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
@@ -1113,9 +1108,8 @@ void main() {
                 rebuildParent = setState;
                 return CustomScrollView(
                   slivers: [
-                    SliverSmartSearchList<String>(
+                    SliverSmartSearchList<String>.async(
                       asyncLoader: currentLoader,
-                      searchableFields: (item) => [item],
                       searchConfig: const SearchConfiguration(
                         debounceDelay: Duration(milliseconds: 10),
                       ),
@@ -1161,12 +1155,11 @@ void main() {
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
+                SliverSmartSearchList<String>.async(
                   asyncLoader:
                       (query, {int page = 0, int pageSize = 20}) async {
                         return ['Async Item 1', 'Async Item 2'];
                       },
-                  searchableFields: (item) => [item],
                   searchConfig: const SearchConfiguration(
                     debounceDelay: Duration(milliseconds: 10),
                   ),
@@ -1199,14 +1192,14 @@ void main() {
         debounceDelay: const Duration(milliseconds: 10),
       );
 
+      controller.setItems(const ['Apple', 'Banana', 'Apricot', 'Cherry']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Apple', 'Banana', 'Apricot', 'Cherry'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {
@@ -1244,14 +1237,14 @@ void main() {
 
       final displayedOrder = <String>[];
 
+      controller.setItems(const ['Cherry', 'Apple', 'Banana']);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<String>(
-                  items: const ['Cherry', 'Apple', 'Banana'],
-                  searchableFields: (item) => [item],
+                SliverSmartSearchList<String>.controller(
                   controller: controller,
                   itemBuilder:
                       (context, item, index, {searchTerms = const []}) {

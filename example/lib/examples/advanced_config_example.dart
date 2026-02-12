@@ -127,9 +127,8 @@ class _AdvancedConfigExampleState extends State<AdvancedConfigExample> {
           ),
           // Smart search list with external controller
           Expanded(
-            child: SmartSearchList<String>(
-              controller: _controller, // Using external controller
-              searchableFields: (item) => [item],
+            child: SmartSearchList<String>.controller(
+              controller: _controller,
               itemBuilder: (context, item, index, {searchTerms = const []}) {
                 return ListTile(
                   leading: CircleAvatar(

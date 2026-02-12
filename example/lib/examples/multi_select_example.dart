@@ -46,6 +46,12 @@ class _MultiSelectExampleState extends State<MultiSelectExample> {
   });
 
   @override
+  void initState() {
+    super.initState();
+    _controller.setItems(_items);
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -69,10 +75,8 @@ class _MultiSelectExampleState extends State<MultiSelectExample> {
           ),
         ],
       ),
-      body: SmartSearchList<String>(
-        items: _items,
+      body: SmartSearchList<String>.controller(
         controller: _controller,
-        searchableFields: (item) => [item],
         itemBuilder: (context, item, index, {searchTerms = const []}) {
           return ListTile(title: Text(item), subtitle: Text('Index: $index'));
         },

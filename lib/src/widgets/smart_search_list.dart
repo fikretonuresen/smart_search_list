@@ -8,15 +8,20 @@ import 'sliver_smart_search_list.dart';
 
 /// A highly customizable searchable list widget.
 ///
-/// Supports both offline and async data sources with search, filter, sort,
-/// and pagination capabilities.
+/// Supports offline, async, and controller-driven data sources with search,
+/// filter, sort, and pagination capabilities.
+///
+/// Three constructors target different use cases:
+/// - [SmartSearchList.new] — offline mode with client-side search.
+/// - [SmartSearchList.async] — async mode where the server handles search.
+/// - [SmartSearchList.controller] — fully controller-driven rendering.
 ///
 /// This widget uses a [Column] with [Expanded] internally, so it must receive
 /// a bounded height constraint from its parent. Do not place it inside a
 /// [ListView] or [SingleChildScrollView] — use [SliverSmartSearchList] for
 /// [CustomScrollView] integration instead.
 ///
-/// Example:
+/// Example (offline):
 /// ```dart
 /// SmartSearchList<String>(
 ///   items: ['Apple', 'Banana', 'Cherry'],
@@ -26,11 +31,23 @@ import 'sliver_smart_search_list.dart';
 ///   },
 /// )
 /// ```
+///
+/// Example (async):
+/// ```dart
+/// SmartSearchList<Product>.async(
+///   asyncLoader: (query, {page = 0, pageSize = 20}) async {
+///     return await api.searchProducts(query, page: page);
+///   },
+///   itemBuilder: (context, product, index, {searchTerms = const []}) {
+///     return ProductCard(product: product);
+///   },
+/// )
+/// ```
 class SmartSearchList<T extends Object> extends StatefulWidget {
-  /// Items for offline mode (provide either this OR asyncLoader).
+  /// Items for offline mode.
   final List<T>? items;
 
-  /// Async data loader (provide either this OR [items]).
+  /// Async data loader for server-driven search.
   ///
   /// Called with an empty string on initial load — handle `''` as "load all".
   /// The `page` parameter is **zero-indexed**: the first page is `0`, the
@@ -40,7 +57,10 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
   asyncLoader;
 
   /// Function to extract searchable text from items.
-  final List<String> Function(T item) searchableFields;
+  ///
+  /// Required for offline mode (client-side search). Not used in async mode
+  /// where the server handles search matching.
+  final List<String> Function(T item)? searchableFields;
 
   /// Builds each item in the list.
   final ItemBuilder<T> itemBuilder;
@@ -140,14 +160,20 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
   /// announcements when result counts change.
   final AccessibilityConfiguration accessibilityConfig;
 
-  /// Creates a searchable list widget.
-  ///
-  /// Provide either [items] for offline mode or [asyncLoader] for async mode.
-  const SmartSearchList({
+  // Private constructor — all mode-specific fields are nullable.
+  //
+  // MAINTAINER NOTE: When adding a new parameter here, you MUST also add it
+  // to every public constructor that should expose it:
+  //   - SmartSearchList()           — offline mode (all params)
+  //   - SmartSearchList.async()     — async mode (no items, searchableFields)
+  //   - SmartSearchList.controller()— external controller (no items,
+  //       searchableFields, asyncLoader, cacheResults, maxCacheSize)
+  // Also update SliverSmartSearchList's matching constructors for parity.
+  const SmartSearchList._({
     super.key,
     this.items,
     this.asyncLoader,
-    required this.searchableFields,
+    this.searchableFields,
     required this.itemBuilder,
     this.controller,
     this.searchFieldBuilder,
@@ -175,13 +201,220 @@ class SmartSearchList<T extends Object> extends StatefulWidget {
     this.groupHeaderBuilder,
     this.groupComparator,
     this.accessibilityConfig = const AccessibilityConfiguration(),
-  }) : assert(
-         items == null || asyncLoader == null,
-         'Provide either items OR asyncLoader, not both',
-       ),
-       assert(
-         items != null || asyncLoader != null || controller != null,
-         'Provide items, asyncLoader, or a controller',
+  });
+
+  /// Creates an offline searchable list with client-side search.
+  ///
+  /// Provide [items] as the data source and [searchableFields] to define which
+  /// text fields are matched during search. The widget creates and manages its
+  /// own [SmartSearchController] internally.
+  ///
+  /// To drive search, filter, and sort programmatically via an external
+  /// controller, use [SmartSearchList.controller] instead.
+  const SmartSearchList({
+    Key? key,
+    required List<T> items,
+    required List<String> Function(T item) searchableFields,
+    required ItemBuilder<T> itemBuilder,
+    SearchFieldBuilder? searchFieldBuilder,
+    SeparatorBuilder? separatorBuilder,
+    LoadingStateBuilder? loadingStateBuilder,
+    ErrorStateBuilder? errorStateBuilder,
+    EmptyStateBuilder? emptyStateBuilder,
+    EmptySearchStateBuilder? emptySearchStateBuilder,
+    SortBuilder<T>? sortBuilder,
+    FilterBuilder<T>? filterBuilder,
+    ProgressIndicatorBuilder? progressIndicatorBuilder,
+    SearchConfiguration searchConfig = const SearchConfiguration(),
+    ListConfiguration listConfig = const ListConfiguration(),
+    PaginationConfiguration? paginationConfig,
+    void Function(T item, int index)? onItemTap,
+    void Function(String query)? onSearchChanged,
+    VoidCallback? onRefresh,
+    Widget? belowSearchWidget,
+    ScrollController? scrollController,
+    bool cacheResults = true,
+    int maxCacheSize = 100,
+    SelectionConfiguration? selectionConfig,
+    void Function(Set<T> selectedItems)? onSelectionChanged,
+    Object Function(T item)? groupBy,
+    GroupHeaderBuilder? groupHeaderBuilder,
+    Comparator<Object>? groupComparator,
+    AccessibilityConfiguration accessibilityConfig =
+        const AccessibilityConfiguration(),
+  }) : this._(
+         key: key,
+         items: items,
+         searchableFields: searchableFields,
+         itemBuilder: itemBuilder,
+         searchFieldBuilder: searchFieldBuilder,
+         separatorBuilder: separatorBuilder,
+         loadingStateBuilder: loadingStateBuilder,
+         errorStateBuilder: errorStateBuilder,
+         emptyStateBuilder: emptyStateBuilder,
+         emptySearchStateBuilder: emptySearchStateBuilder,
+         sortBuilder: sortBuilder,
+         filterBuilder: filterBuilder,
+         progressIndicatorBuilder: progressIndicatorBuilder,
+         searchConfig: searchConfig,
+         listConfig: listConfig,
+         paginationConfig: paginationConfig,
+         onItemTap: onItemTap,
+         onSearchChanged: onSearchChanged,
+         onRefresh: onRefresh,
+         belowSearchWidget: belowSearchWidget,
+         scrollController: scrollController,
+         cacheResults: cacheResults,
+         maxCacheSize: maxCacheSize,
+         selectionConfig: selectionConfig,
+         onSelectionChanged: onSelectionChanged,
+         groupBy: groupBy,
+         groupHeaderBuilder: groupHeaderBuilder,
+         groupComparator: groupComparator,
+         accessibilityConfig: accessibilityConfig,
+       );
+
+  /// Creates an async searchable list that loads data from a remote source.
+  ///
+  /// The [asyncLoader] is called with a search query, page index (zero-based),
+  /// and page size. It is called with an empty string on initial load — handle
+  /// `''` as "load all".
+  ///
+  /// Search matching is delegated to the server; [searchableFields] is not
+  /// accepted. The widget creates and manages its own [SmartSearchController]
+  /// internally.
+  ///
+  /// To drive search programmatically via an external controller, use
+  /// [SmartSearchList.controller] with [SmartSearchController.setAsyncLoader].
+  const SmartSearchList.async({
+    Key? key,
+    required Future<List<T>> Function(String query, {int page, int pageSize})
+    asyncLoader,
+    required ItemBuilder<T> itemBuilder,
+    SearchFieldBuilder? searchFieldBuilder,
+    SeparatorBuilder? separatorBuilder,
+    LoadingStateBuilder? loadingStateBuilder,
+    ErrorStateBuilder? errorStateBuilder,
+    EmptyStateBuilder? emptyStateBuilder,
+    EmptySearchStateBuilder? emptySearchStateBuilder,
+    SortBuilder<T>? sortBuilder,
+    FilterBuilder<T>? filterBuilder,
+    ProgressIndicatorBuilder? progressIndicatorBuilder,
+    SearchConfiguration searchConfig = const SearchConfiguration(),
+    ListConfiguration listConfig = const ListConfiguration(),
+    PaginationConfiguration? paginationConfig,
+    void Function(T item, int index)? onItemTap,
+    void Function(String query)? onSearchChanged,
+    VoidCallback? onRefresh,
+    Widget? belowSearchWidget,
+    ScrollController? scrollController,
+    bool cacheResults = true,
+    int maxCacheSize = 100,
+    SelectionConfiguration? selectionConfig,
+    void Function(Set<T> selectedItems)? onSelectionChanged,
+    Object Function(T item)? groupBy,
+    GroupHeaderBuilder? groupHeaderBuilder,
+    Comparator<Object>? groupComparator,
+    AccessibilityConfiguration accessibilityConfig =
+        const AccessibilityConfiguration(),
+  }) : this._(
+         key: key,
+         asyncLoader: asyncLoader,
+         itemBuilder: itemBuilder,
+         searchFieldBuilder: searchFieldBuilder,
+         separatorBuilder: separatorBuilder,
+         loadingStateBuilder: loadingStateBuilder,
+         errorStateBuilder: errorStateBuilder,
+         emptyStateBuilder: emptyStateBuilder,
+         emptySearchStateBuilder: emptySearchStateBuilder,
+         sortBuilder: sortBuilder,
+         filterBuilder: filterBuilder,
+         progressIndicatorBuilder: progressIndicatorBuilder,
+         searchConfig: searchConfig,
+         listConfig: listConfig,
+         paginationConfig: paginationConfig,
+         onItemTap: onItemTap,
+         onSearchChanged: onSearchChanged,
+         onRefresh: onRefresh,
+         belowSearchWidget: belowSearchWidget,
+         scrollController: scrollController,
+         cacheResults: cacheResults,
+         maxCacheSize: maxCacheSize,
+         selectionConfig: selectionConfig,
+         onSelectionChanged: onSelectionChanged,
+         groupBy: groupBy,
+         groupHeaderBuilder: groupHeaderBuilder,
+         groupComparator: groupComparator,
+         accessibilityConfig: accessibilityConfig,
+       );
+
+  /// Creates a searchable list driven entirely by an external [controller].
+  ///
+  /// The controller is responsible for providing data (via
+  /// [SmartSearchController.setItems] or [SmartSearchController.setAsyncLoader]).
+  /// The widget renders whatever the controller provides.
+  ///
+  /// Behavioral search properties (debounce, case sensitivity, min length,
+  /// fuzzy settings) must be configured on the [controller] directly — the
+  /// [searchConfig] parameter only affects UI properties (hint text, autofocus,
+  /// trigger mode) on this constructor.
+  ///
+  /// You are responsible for disposing the controller.
+  const SmartSearchList.controller({
+    Key? key,
+    required SmartSearchController<T> controller,
+    required ItemBuilder<T> itemBuilder,
+    SearchFieldBuilder? searchFieldBuilder,
+    SeparatorBuilder? separatorBuilder,
+    LoadingStateBuilder? loadingStateBuilder,
+    ErrorStateBuilder? errorStateBuilder,
+    EmptyStateBuilder? emptyStateBuilder,
+    EmptySearchStateBuilder? emptySearchStateBuilder,
+    SortBuilder<T>? sortBuilder,
+    FilterBuilder<T>? filterBuilder,
+    ProgressIndicatorBuilder? progressIndicatorBuilder,
+    SearchConfiguration searchConfig = const SearchConfiguration(),
+    ListConfiguration listConfig = const ListConfiguration(),
+    PaginationConfiguration? paginationConfig,
+    void Function(T item, int index)? onItemTap,
+    void Function(String query)? onSearchChanged,
+    VoidCallback? onRefresh,
+    Widget? belowSearchWidget,
+    ScrollController? scrollController,
+    SelectionConfiguration? selectionConfig,
+    void Function(Set<T> selectedItems)? onSelectionChanged,
+    Object Function(T item)? groupBy,
+    GroupHeaderBuilder? groupHeaderBuilder,
+    Comparator<Object>? groupComparator,
+    AccessibilityConfiguration accessibilityConfig =
+        const AccessibilityConfiguration(),
+  }) : this._(
+         key: key,
+         controller: controller,
+         itemBuilder: itemBuilder,
+         searchFieldBuilder: searchFieldBuilder,
+         separatorBuilder: separatorBuilder,
+         loadingStateBuilder: loadingStateBuilder,
+         errorStateBuilder: errorStateBuilder,
+         emptyStateBuilder: emptyStateBuilder,
+         emptySearchStateBuilder: emptySearchStateBuilder,
+         sortBuilder: sortBuilder,
+         filterBuilder: filterBuilder,
+         progressIndicatorBuilder: progressIndicatorBuilder,
+         searchConfig: searchConfig,
+         listConfig: listConfig,
+         paginationConfig: paginationConfig,
+         onItemTap: onItemTap,
+         onSearchChanged: onSearchChanged,
+         onRefresh: onRefresh,
+         belowSearchWidget: belowSearchWidget,
+         scrollController: scrollController,
+         selectionConfig: selectionConfig,
+         onSelectionChanged: onSelectionChanged,
+         groupBy: groupBy,
+         groupHeaderBuilder: groupHeaderBuilder,
+         groupComparator: groupComparator,
+         accessibilityConfig: accessibilityConfig,
        );
 
   @override
@@ -299,7 +532,11 @@ class _SmartSearchListState<T extends Object>
       }
     }
 
-    // External controller swap: detach old, attach new
+    // External controller swap: detach old, attach new.
+    // Note: only the announcement listener is removed here — the main rebuild
+    // listener is managed by AnimatedBuilder (see _buildList), which handles
+    // its own listener lifecycle. SliverSmartSearchList removes both listeners
+    // manually because it uses setState instead of AnimatedBuilder.
     if (widget.controller != oldWidget.controller) {
       oldWidget.controller?.removeListener(_onControllerChangedForAnnouncement);
       if (widget.controller != null) {
@@ -429,6 +666,9 @@ class _SmartSearchListState<T extends Object>
 
   @override
   Widget build(BuildContext context) {
+    // AnimatedBuilder manages its own listener on _controller, so
+    // didUpdateWidget does not need to remove/re-add a manual listener
+    // on controller swap (unlike SliverSmartSearchList which uses setState).
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {

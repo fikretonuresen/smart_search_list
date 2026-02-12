@@ -116,11 +116,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SmartSearchList<String>(
+            body: SmartSearchList<String>.async(
               asyncLoader: (query, {int page = 0, int pageSize = 20}) async {
                 throw Exception('Network failure');
               },
-              searchableFields: (item) => [item],
               searchConfig: const SearchConfiguration(
                 debounceDelay: Duration(milliseconds: 10),
               ),
@@ -217,9 +216,8 @@ void main() {
             body: StatefulBuilder(
               builder: (context, setState) {
                 rebuildParent = setState;
-                return SmartSearchList<String>(
+                return SmartSearchList<String>.async(
                   asyncLoader: currentLoader,
-                  searchableFields: (item) => [item],
                   searchConfig: const SearchConfiguration(
                     debounceDelay: Duration(milliseconds: 10),
                   ),
@@ -328,14 +326,13 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      controller.setItems(const ['Apple', 'Banana']);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SmartSearchList<String>(
+            body: SmartSearchList<String>.controller(
               controller: controller,
-              items: const ['Apple', 'Banana'],
-              searchableFields: (item) => [item],
               itemBuilder: (context, item, index, {searchTerms = const []}) {
                 return ListTile(title: Text(item));
               },
@@ -367,7 +364,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SmartSearchList<String>(
+            body: SmartSearchList<String>.async(
               asyncLoader: (query, {int page = 0, int pageSize = 20}) async {
                 lastRequestedPage = page;
                 if (page == 0) {
@@ -377,7 +374,6 @@ void main() {
                 // Second page — wait on completer so we can check the request
                 return completer.future;
               },
-              searchableFields: (item) => [item],
               searchConfig: const SearchConfiguration(
                 debounceDelay: Duration(milliseconds: 10),
               ),

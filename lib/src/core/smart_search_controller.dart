@@ -7,20 +7,26 @@ import 'fuzzy_utils.dart';
 /// Handles both offline and async data sources with proper disposal safety
 /// and race condition prevention. `T extends Object` ensures non-nullable types.
 ///
-/// Example:
+/// Example (offline mode):
 /// ```dart
 /// final controller = SmartSearchController<String>(
 ///   searchableFields: (item) => [item],
 /// );
-///
 /// controller.setItems(['Apple', 'Banana', 'Cherry']);
 /// controller.search('App');
+/// ```
+///
+/// Example (async mode — [searchableFields] not needed):
+/// ```dart
+/// final controller = SmartSearchController<Product>();
+/// controller.setAsyncLoader(api.searchProducts);
+/// controller.search('shoes');
 /// ```
 class SmartSearchController<T extends Object> extends ChangeNotifier {
   /// Creates a search controller.
   SmartSearchController({
     this.debounceDelay = const Duration(milliseconds: 300),
-    required this.searchableFields,
+    this.searchableFields,
     this.cacheResults = true,
     this.maxCacheSize = 100,
     bool caseSensitive = false,
@@ -37,7 +43,10 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   final Duration debounceDelay;
 
   /// Function to extract searchable text from items.
-  final List<String> Function(T item) searchableFields;
+  ///
+  /// Required for offline search mode. In async mode the server handles search
+  /// matching, so this can be omitted.
+  final List<String> Function(T item)? searchableFields;
 
   /// Whether to cache search results.
   final bool cacheResults;
@@ -358,8 +367,21 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
       filtered = filtered.where(filter.value).toList();
     }
 
-    // Apply search
-    if (_searchQuery.isNotEmpty) {
+    // Apply search (only when searchableFields is provided — async mode
+    // delegates search matching to the server).
+    assert(() {
+      if (_searchQuery.isNotEmpty &&
+          searchableFields == null &&
+          _asyncLoader == null) {
+        debugPrint(
+          'SmartSearchController: searchableFields is null and no asyncLoader '
+          'is set. Search queries will not filter results. Pass '
+          'searchableFields to the controller constructor for offline search.',
+        );
+      }
+      return true;
+    }());
+    if (_searchQuery.isNotEmpty && searchableFields != null) {
       if (_fuzzySearchEnabled) {
         filtered = _fuzzySearch(filtered);
       } else {
@@ -367,7 +389,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
             ? _searchQuery
             : _searchQuery.toLowerCase();
         filtered = filtered.where((item) {
-          final searchableTexts = searchableFields(item);
+          final searchableTexts = searchableFields!(item);
           return searchableTexts.any((text) {
             final searchText = _caseSensitive ? text : text.toLowerCase();
             return searchText.contains(query);
@@ -393,7 +415,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     final scored = <_ScoredItem<T>>[];
 
     for (final item in items) {
-      final fields = searchableFields(item);
+      final fields = searchableFields!(item);
       final result = FuzzyMatcher.matchFields(
         _searchQuery,
         fields,

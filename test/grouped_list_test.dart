@@ -57,13 +57,12 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      controller.setItems(const ['Apple', 'Avocado', 'Banana']);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SmartSearchList<String>(
-              items: const ['Apple', 'Avocado', 'Banana'],
-              searchableFields: (item) => [item],
+            body: SmartSearchList<String>.controller(
               controller: controller,
               itemBuilder: (context, item, index, {searchTerms = const []}) {
                 return ListTile(title: Text(item));

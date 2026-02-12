@@ -61,10 +61,9 @@ class _AsyncApiExampleState extends State<AsyncApiExample> {
             ),
           ),
           Expanded(
-            child: SmartSearchList<ApiUser>(
+            child: SmartSearchList<ApiUser>.async(
               asyncLoader: (query, {int page = 0, int pageSize = 20}) =>
                   _simulateApiCall(query, page: page, pageSize: pageSize),
-              searchableFields: (user) => [user.name, user.email, user.company],
               itemBuilder: (context, user, index, {searchTerms = const []}) {
                 return Card(
                   margin: const EdgeInsets.symmetric(

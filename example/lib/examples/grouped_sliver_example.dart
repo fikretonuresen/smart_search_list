@@ -132,9 +132,8 @@ class _GroupedSliverExampleState extends State<GroupedSliverExample> {
           Expanded(
             child: CustomScrollView(
               slivers: [
-                SliverSmartSearchList<Product>(
+                SliverSmartSearchList<Product>.controller(
                   controller: _controller,
-                  searchableFields: (p) => [p.name, p.category],
                   itemBuilder: (context, product, index, {searchTerms = const []}) {
                     return ListTile(
                       title: Text(product.name),

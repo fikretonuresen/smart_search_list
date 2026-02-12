@@ -110,9 +110,8 @@ class _EcommerceExampleState extends State<EcommerceExample> {
           IconButton(icon: const Icon(Icons.sort), onPressed: _showSortDialog),
         ],
       ),
-      body: SmartSearchList<Product>(
+      body: SmartSearchList<Product>.controller(
         controller: _controller,
-        searchableFields: (product) => [product.name, product.category],
         itemBuilder: (context, product, index, {searchTerms = const []}) {
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

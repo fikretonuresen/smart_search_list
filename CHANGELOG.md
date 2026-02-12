@@ -1,3 +1,32 @@
+## 0.7.0 - 2026-02-12
+
+Named constructors replace nullable params and runtime assertions with compile-time mode enforcement.
+
+### Breaking Changes
+- **Named constructors**: `SmartSearchList` and `SliverSmartSearchList` now use three constructors:
+  - `SmartSearchList(items:, searchableFields:, ...)` -- offline mode with client-side search
+  - `SmartSearchList.async(asyncLoader:, ...)` -- async mode where the server handles search
+  - `SmartSearchList.controller(controller:, ...)` -- fully controller-driven rendering
+- **`controller` parameter removed from default and `.async()` constructors**: External controllers are now exclusive to `.controller()`. This enforces clean mode separation -- each constructor serves exactly one data pattern.
+- **`cacheResults` and `maxCacheSize` removed from `.controller()`**: These only apply to internally-created controllers. Configure caching on your controller directly.
+- **`SmartSearchController.searchableFields`**: Changed from `required` to optional (nullable). Required only for offline search mode.
+- **Removed assertions**: The two runtime assertions ("Provide either items OR asyncLoader" and "Provide items, asyncLoader, or a controller") are removed. The compiler now enforces these constraints.
+
+### Migration
+- **Offline mode** (items + searchableFields): No change required. The default constructor signature is identical.
+- **Offline + external controller** (items + controller): Change to `.controller(controller: ...,` and call `controller.setItems(...)` yourself. Pass `searchableFields` to the controller constructor. Pass `debounceDelay`, `caseSensitive`, `minSearchLength`, `fuzzySearchEnabled`, and `fuzzyThreshold` to the controller constructor instead of `searchConfig`.
+- **Async mode** (asyncLoader): Change `SmartSearchList(asyncLoader: ..., searchableFields: ...,` to `SmartSearchList.async(asyncLoader: ...,` and remove `searchableFields:`.
+- **Async + external controller** (asyncLoader + controller): Change to `.controller(controller: ...,` and call `controller.setAsyncLoader(...)` yourself. You must also call `controller.search('')` to trigger the initial load — the widget no longer does this automatically for external controllers.
+- **Controller-only mode** (controller without items/asyncLoader): Change to `SmartSearchList.controller(controller: ...,` and remove `searchableFields:`.
+- **SmartSearchController**: If you were passing `searchableFields` in async-only usage, you can now omit it.
+
+### Documentation
+- **README GIFs**: Added basic search, fuzzy search, and async pagination demo GIFs
+
+### Backward Compatibility
+- The default constructor signature is unchanged for offline mode -- existing offline code compiles without modification.
+- This is a breaking change for async, controller, and mixed-mode usage patterns.
+
 ## 0.6.1 - 2026-02-10
 
 Dartdoc overhaul, bug fixes, and sliver test coverage.

@@ -18,13 +18,19 @@ Searchable list widget for Flutter. Handles offline filtering and async loading 
 - TalkBack/VoiceOver accessible with localizable labels
 - Builder patterns for every UI component
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/basic_search.gif" width="360" alt="Basic Search">
+  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/fuzzy_search.gif" width="360" alt="Fuzzy Search">
+  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/async_pagination.gif" width="360" alt="Async Pagination">
+</p>
+
 ## Installation
 
 Requires Flutter 3.35.0 or higher.
 
 ```yaml
 dependencies:
-  smart_search_list: ^0.6.1
+  smart_search_list: ^0.7.0
 ```
 
 ## Quick Start
@@ -44,11 +50,10 @@ SmartSearchList<String>(
 ### Async Loading
 
 ```dart
-SmartSearchList<Product>(
+SmartSearchList<Product>.async(
   asyncLoader: (query, {page = 0, pageSize = 20}) async {
     return await api.searchProducts(query, page: page);
   },
-  searchableFields: (product) => [product.name, product.category],
   itemBuilder: (context, product, index, {searchTerms = const []}) {
     return ProductCard(product: product);
   },
@@ -105,6 +110,9 @@ Everything is customizable via builders:
 
 ```dart
 SmartSearchList<T>(
+  items: myItems,
+  searchableFields: (item) => [item.name],
+  itemBuilder: (context, item, index, {searchTerms = const []}) => ...,
   searchFieldBuilder: (context, controller, focusNode, onClear) {
     return CustomSearchField(controller: controller);
   },
@@ -132,6 +140,9 @@ SmartSearchList<T>(
 
 ```dart
 SmartSearchList<T>(
+  items: myItems,
+  searchableFields: (item) => [item.name],
+  itemBuilder: (context, item, index, {searchTerms = const []}) => ...,
   searchConfig: const SearchConfiguration(
     enabled: true,
     autofocus: false,

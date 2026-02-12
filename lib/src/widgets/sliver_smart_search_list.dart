@@ -18,10 +18,12 @@ import 'smart_search_list.dart';
 /// companion sliver) should provide the search input and drive the
 /// [SmartSearchController] externally.
 ///
-/// Supports offline and async data sources, pagination, multi-select,
-/// grouped sticky headers, and accessibility announcements.
+/// Three constructors target different use cases:
+/// - [SliverSmartSearchList.new] — offline mode with client-side search.
+/// - [SliverSmartSearchList.async] — async mode where the server handles search.
+/// - [SliverSmartSearchList.controller] — fully controller-driven rendering.
 ///
-/// Example:
+/// Example (offline):
 /// ```dart
 /// CustomScrollView(
 ///   slivers: [
@@ -36,10 +38,10 @@ import 'smart_search_list.dart';
 /// )
 /// ```
 class SliverSmartSearchList<T extends Object> extends StatefulWidget {
-  /// Items for offline mode (provide either this OR asyncLoader).
+  /// Items for offline mode.
   final List<T>? items;
 
-  /// Async data loader (provide either this OR [items]).
+  /// Async data loader for server-driven search.
   ///
   /// Called with an empty string on initial load — handle `''` as "load all".
   /// The `page` parameter is **zero-indexed**: the first page is `0`, the
@@ -49,7 +51,10 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
   asyncLoader;
 
   /// Function to extract searchable text from items.
-  final List<String> Function(T item) searchableFields;
+  ///
+  /// Required for offline mode (client-side search). Not used in async mode
+  /// where the server handles search matching.
+  final List<String> Function(T item)? searchableFields;
 
   /// Builds each item in the list.
   final ItemBuilder<T> itemBuilder;
@@ -147,14 +152,21 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
   /// announcements when result counts change.
   final AccessibilityConfiguration accessibilityConfig;
 
-  /// Creates a sliver searchable list widget for use in [CustomScrollView].
-  ///
-  /// Provide either [items] for offline mode or [asyncLoader] for async mode.
-  const SliverSmartSearchList({
+  // Private constructor — all mode-specific fields are nullable.
+  //
+  // MAINTAINER NOTE: When adding a new parameter here, you MUST also add it
+  // to every public constructor that should expose it:
+  //   - SliverSmartSearchList()           — offline mode (all params)
+  //   - SliverSmartSearchList.async()     — async mode (no items,
+  //       searchableFields)
+  //   - SliverSmartSearchList.controller()— external controller (no items,
+  //       searchableFields, asyncLoader, cacheResults, maxCacheSize)
+  // Also update SmartSearchList's matching constructors for parity.
+  const SliverSmartSearchList._({
     super.key,
     this.items,
     this.asyncLoader,
-    required this.searchableFields,
+    this.searchableFields,
     required this.itemBuilder,
     this.controller,
     this.loadingStateBuilder,
@@ -176,13 +188,183 @@ class SliverSmartSearchList<T extends Object> extends StatefulWidget {
     this.groupComparator,
     this.groupHeaderExtent = 48.0,
     this.accessibilityConfig = const AccessibilityConfiguration(),
-  }) : assert(
-         items == null || asyncLoader == null,
-         'Provide either items OR asyncLoader, not both',
-       ),
-       assert(
-         items != null || asyncLoader != null || controller != null,
-         'Provide items, asyncLoader, or a controller',
+  });
+
+  /// Creates an offline sliver searchable list with client-side search.
+  ///
+  /// Provide [items] as the data source and [searchableFields] to define which
+  /// text fields are matched during search. The widget creates and manages its
+  /// own [SmartSearchController] internally.
+  ///
+  /// To drive search, filter, and sort programmatically via an external
+  /// controller, use [SliverSmartSearchList.controller] instead.
+  const SliverSmartSearchList({
+    Key? key,
+    required List<T> items,
+    required List<String> Function(T item) searchableFields,
+    required ItemBuilder<T> itemBuilder,
+    LoadingStateBuilder? loadingStateBuilder,
+    ErrorStateBuilder? errorStateBuilder,
+    EmptyStateBuilder? emptyStateBuilder,
+    EmptySearchStateBuilder? emptySearchStateBuilder,
+    SearchConfiguration searchConfig = const SearchConfiguration(),
+    ListConfiguration listConfig = const ListConfiguration(),
+    PaginationConfiguration? paginationConfig,
+    void Function(T item, int index)? onItemTap,
+    void Function(String query)? onSearchChanged,
+    VoidCallback? onRefresh,
+    bool cacheResults = true,
+    int maxCacheSize = 100,
+    SelectionConfiguration? selectionConfig,
+    void Function(Set<T> selectedItems)? onSelectionChanged,
+    Object Function(T item)? groupBy,
+    GroupHeaderBuilder? groupHeaderBuilder,
+    Comparator<Object>? groupComparator,
+    double groupHeaderExtent = 48.0,
+    AccessibilityConfiguration accessibilityConfig =
+        const AccessibilityConfiguration(),
+  }) : this._(
+         key: key,
+         items: items,
+         searchableFields: searchableFields,
+         itemBuilder: itemBuilder,
+         loadingStateBuilder: loadingStateBuilder,
+         errorStateBuilder: errorStateBuilder,
+         emptyStateBuilder: emptyStateBuilder,
+         emptySearchStateBuilder: emptySearchStateBuilder,
+         searchConfig: searchConfig,
+         listConfig: listConfig,
+         paginationConfig: paginationConfig,
+         onItemTap: onItemTap,
+         onSearchChanged: onSearchChanged,
+         onRefresh: onRefresh,
+         cacheResults: cacheResults,
+         maxCacheSize: maxCacheSize,
+         selectionConfig: selectionConfig,
+         onSelectionChanged: onSelectionChanged,
+         groupBy: groupBy,
+         groupHeaderBuilder: groupHeaderBuilder,
+         groupComparator: groupComparator,
+         groupHeaderExtent: groupHeaderExtent,
+         accessibilityConfig: accessibilityConfig,
+       );
+
+  /// Creates an async sliver searchable list that loads data from a remote source.
+  ///
+  /// The [asyncLoader] is called with a search query, page index (zero-based),
+  /// and page size. Search matching is delegated to the server;
+  /// [searchableFields] is not accepted. The widget creates and manages its own
+  /// [SmartSearchController] internally.
+  ///
+  /// To drive search programmatically via an external controller, use
+  /// [SliverSmartSearchList.controller] with
+  /// [SmartSearchController.setAsyncLoader].
+  const SliverSmartSearchList.async({
+    Key? key,
+    required Future<List<T>> Function(String query, {int page, int pageSize})
+    asyncLoader,
+    required ItemBuilder<T> itemBuilder,
+    LoadingStateBuilder? loadingStateBuilder,
+    ErrorStateBuilder? errorStateBuilder,
+    EmptyStateBuilder? emptyStateBuilder,
+    EmptySearchStateBuilder? emptySearchStateBuilder,
+    SearchConfiguration searchConfig = const SearchConfiguration(),
+    ListConfiguration listConfig = const ListConfiguration(),
+    PaginationConfiguration? paginationConfig,
+    void Function(T item, int index)? onItemTap,
+    void Function(String query)? onSearchChanged,
+    VoidCallback? onRefresh,
+    bool cacheResults = true,
+    int maxCacheSize = 100,
+    SelectionConfiguration? selectionConfig,
+    void Function(Set<T> selectedItems)? onSelectionChanged,
+    Object Function(T item)? groupBy,
+    GroupHeaderBuilder? groupHeaderBuilder,
+    Comparator<Object>? groupComparator,
+    double groupHeaderExtent = 48.0,
+    AccessibilityConfiguration accessibilityConfig =
+        const AccessibilityConfiguration(),
+  }) : this._(
+         key: key,
+         asyncLoader: asyncLoader,
+         itemBuilder: itemBuilder,
+         loadingStateBuilder: loadingStateBuilder,
+         errorStateBuilder: errorStateBuilder,
+         emptyStateBuilder: emptyStateBuilder,
+         emptySearchStateBuilder: emptySearchStateBuilder,
+         searchConfig: searchConfig,
+         listConfig: listConfig,
+         paginationConfig: paginationConfig,
+         onItemTap: onItemTap,
+         onSearchChanged: onSearchChanged,
+         onRefresh: onRefresh,
+         cacheResults: cacheResults,
+         maxCacheSize: maxCacheSize,
+         selectionConfig: selectionConfig,
+         onSelectionChanged: onSelectionChanged,
+         groupBy: groupBy,
+         groupHeaderBuilder: groupHeaderBuilder,
+         groupComparator: groupComparator,
+         groupHeaderExtent: groupHeaderExtent,
+         accessibilityConfig: accessibilityConfig,
+       );
+
+  /// Creates a sliver searchable list driven entirely by an external [controller].
+  ///
+  /// The controller is responsible for providing data (via
+  /// [SmartSearchController.setItems] or [SmartSearchController.setAsyncLoader]).
+  /// The widget renders whatever the controller provides.
+  ///
+  /// All search properties (debounce, case sensitivity, min length, fuzzy
+  /// settings) must be configured on the [controller] directly. The
+  /// [searchConfig] parameter has no effect on this constructor — behavioral
+  /// properties are not forwarded to an external controller, and this widget
+  /// has no search field for UI properties to apply to.
+  ///
+  /// You are responsible for disposing the controller.
+  const SliverSmartSearchList.controller({
+    Key? key,
+    required SmartSearchController<T> controller,
+    required ItemBuilder<T> itemBuilder,
+    LoadingStateBuilder? loadingStateBuilder,
+    ErrorStateBuilder? errorStateBuilder,
+    EmptyStateBuilder? emptyStateBuilder,
+    EmptySearchStateBuilder? emptySearchStateBuilder,
+    SearchConfiguration searchConfig = const SearchConfiguration(),
+    ListConfiguration listConfig = const ListConfiguration(),
+    PaginationConfiguration? paginationConfig,
+    void Function(T item, int index)? onItemTap,
+    void Function(String query)? onSearchChanged,
+    VoidCallback? onRefresh,
+    SelectionConfiguration? selectionConfig,
+    void Function(Set<T> selectedItems)? onSelectionChanged,
+    Object Function(T item)? groupBy,
+    GroupHeaderBuilder? groupHeaderBuilder,
+    Comparator<Object>? groupComparator,
+    double groupHeaderExtent = 48.0,
+    AccessibilityConfiguration accessibilityConfig =
+        const AccessibilityConfiguration(),
+  }) : this._(
+         key: key,
+         controller: controller,
+         itemBuilder: itemBuilder,
+         loadingStateBuilder: loadingStateBuilder,
+         errorStateBuilder: errorStateBuilder,
+         emptyStateBuilder: emptyStateBuilder,
+         emptySearchStateBuilder: emptySearchStateBuilder,
+         searchConfig: searchConfig,
+         listConfig: listConfig,
+         paginationConfig: paginationConfig,
+         onItemTap: onItemTap,
+         onSearchChanged: onSearchChanged,
+         onRefresh: onRefresh,
+         selectionConfig: selectionConfig,
+         onSelectionChanged: onSelectionChanged,
+         groupBy: groupBy,
+         groupHeaderBuilder: groupHeaderBuilder,
+         groupComparator: groupComparator,
+         groupHeaderExtent: groupHeaderExtent,
+         accessibilityConfig: accessibilityConfig,
        );
 
   @override
