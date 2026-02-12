@@ -1,3 +1,20 @@
+## 0.7.1 - 2026-02-12
+
+README rewrite for pub.dev readiness with problem-solution opening, vertical GIF layout, and .controller() example.
+
+### Documentation
+- **README overhaul**: Rewrote for pub.dev -- problem-solution opening paragraph, vertical GIF layout with captions at 320px, simplified installation to `flutter pub add`
+- **Controller example**: Added `.controller()` Quick Start section showing external filter, sort, and setItems usage
+- **Removed badges**: Deferred pub.dev badges until after first publish to avoid broken shield images
+- **Removed Platform Support section**: Folded "all platforms" into Features list (pub.dev shows this in sidebar)
+- **Added Example App section**: Prominent link to the 14-demo example app
+
+### Bug Fixes
+- **Spanish localization typo**: Fixed `'Borrar busqueda'` to `'Borrar búsqueda'` in README and accessibility example
+
+### Backward Compatibility
+- No breaking changes. No library code changes.
+
 ## 0.7.0 - 2026-02-12
 
 Named constructors replace nullable params and runtime assertions with compile-time mode enforcement.

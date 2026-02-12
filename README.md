@@ -1,37 +1,40 @@
 # Smart Search List
 
-Searchable list widget for Flutter. Handles offline filtering and async loading with pagination. No dependencies.
+Every Flutter app with a list eventually needs search, filtering, sorting, and pagination. Building that properly means debouncing, async race conditions, disposal safety, empty states, accessibility -- roughly 200 lines of boilerplate per screen. Smart Search List handles all of it with a single widget. Zero dependencies.
 
-[![pub package](https://img.shields.io/pub/v/smart_search_list.svg)](https://pub.dev/packages/smart_search_list)
-[![popularity](https://img.shields.io/pub/popularity/smart_search_list.svg)](https://pub.dev/packages/smart_search_list/score)
-[![likes](https://img.shields.io/pub/likes/smart_search_list.svg)](https://pub.dev/packages/smart_search_list/score)
-[![pub points](https://img.shields.io/pub/points/smart_search_list.svg)](https://pub.dev/packages/smart_search_list/score)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/basic_search.gif" width="320" alt="Basic offline search with instant filtering">
+  <br><em>Offline search -- instant multi-field filtering</em>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/fuzzy_search.gif" width="320" alt="Fuzzy search with typo tolerance and character highlighting">
+  <br><em>Fuzzy search -- typo-tolerant matching with character highlighting</em>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/async_pagination.gif" width="320" alt="Async loading with pagination and search">
+  <br><em>Async loading -- API pagination with search</em>
+</p>
 
 ## Features
 
 - Offline list filtering with multi-field search
 - Async data loading with pagination and pull-to-refresh
-- Fuzzy search with typo tolerance (opt-in)
+- Fuzzy search with typo tolerance and scored ranking (opt-in)
 - Built-in search term highlighting widget
 - Multi-select with checkboxes and programmatic selection
-- Grouped lists with section headers
+- Grouped lists with section headers (sticky headers in slivers)
 - TalkBack/VoiceOver accessible with localizable labels
-- Builder patterns for every UI component
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/basic_search.gif" width="360" alt="Basic Search">
-  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/fuzzy_search.gif" width="360" alt="Fuzzy Search">
-  <img src="https://raw.githubusercontent.com/fikretonuresen/smart_search_list/main/doc/images/async_pagination.gif" width="360" alt="Async Pagination">
-</p>
+- All platforms -- Android, iOS, Web, macOS, Windows, Linux
 
 ## Installation
 
-Requires Flutter 3.35.0 or higher.
-
-```yaml
-dependencies:
-  smart_search_list: ^0.7.0
 ```
+flutter pub add smart_search_list
+```
+
+Requires Flutter 3.35.0 or higher.
 
 ## Quick Start
 
@@ -61,6 +64,28 @@ SmartSearchList<Product>.async(
     pageSize: 20,
     enabled: true,
   ),
+)
+```
+
+### External Controller
+
+Use `.controller()` when you need programmatic access to search, filter, and sort state from outside the widget:
+
+```dart
+final controller = SmartSearchController<Product>(
+  searchableFields: (p) => [p.name, p.category],
+);
+
+// Apply filters and sorting externally
+controller.setFilter('in-stock', (p) => p.inStock);
+controller.setSortBy((a, b) => a.price.compareTo(b.price));
+controller.setItems(products);
+
+SmartSearchList<Product>.controller(
+  controller: controller,
+  itemBuilder: (context, product, index, {searchTerms = const []}) {
+    return ListTile(title: Text(product.name));
+  },
 )
 ```
 
@@ -104,9 +129,45 @@ searchConfig: const SearchConfiguration(
 
 For lists over 5,000 items, test performance on target devices. Raising the threshold to 0.6+ skips the expensive edit-distance phase. Using `SearchTriggerMode.onSubmit` also helps by reducing search frequency.
 
+## Multi-Select
+
+```dart
+SmartSearchList<String>(
+  items: ['Apple', 'Banana', 'Cherry'],
+  searchableFields: (item) => [item],
+  itemBuilder: (context, item, index, {searchTerms = const []}) {
+    return ListTile(title: Text(item));
+  },
+  selectionConfig: const SelectionConfiguration(
+    enabled: true,
+    showCheckbox: true,
+    position: CheckboxPosition.leading,
+  ),
+  onSelectionChanged: (selected) => print('${selected.length} selected'),
+)
+```
+
+Programmatic control via the controller: `selectAll()`, `deselectAll()`, `selectWhere((item) => ...)`, `toggleSelection(item)`.
+
+## Grouped Lists
+
+```dart
+SmartSearchList<Product>(
+  items: products,
+  searchableFields: (p) => [p.name, p.category],
+  itemBuilder: (context, product, index, {searchTerms = const []}) {
+    return ListTile(title: Text(product.name));
+  },
+  groupBy: (product) => product.category,
+  groupComparator: (a, b) => (a as String).compareTo(b as String),
+)
+```
+
+Sticky headers are supported in `SliverSmartSearchList` via `SliverMainAxisGroup`.
+
 ## Customization
 
-Everything is customizable via builders:
+Every UI component is replaceable via builders:
 
 ```dart
 SmartSearchList<T>(
@@ -167,42 +228,6 @@ SmartSearchList<T>(
 )
 ```
 
-## Multi-Select
-
-```dart
-SmartSearchList<String>(
-  items: ['Apple', 'Banana', 'Cherry'],
-  searchableFields: (item) => [item],
-  itemBuilder: (context, item, index, {searchTerms = const []}) {
-    return ListTile(title: Text(item));
-  },
-  selectionConfig: const SelectionConfiguration(
-    enabled: true,
-    showCheckbox: true,
-    position: CheckboxPosition.leading,
-  ),
-  onSelectionChanged: (selected) => print('${selected.length} selected'),
-)
-```
-
-Programmatic control via the controller: `selectAll()`, `deselectAll()`, `selectWhere((item) => ...)`, `toggleSelection(item)`.
-
-## Grouped Lists
-
-```dart
-SmartSearchList<Product>(
-  items: products,
-  searchableFields: (p) => [p.name, p.category],
-  itemBuilder: (context, product, index, {searchTerms = const []}) {
-    return ListTile(title: Text(product.name));
-  },
-  groupBy: (product) => product.category,
-  groupComparator: (a, b) => (a as String).compareTo(b as String),
-)
-```
-
-Sticky headers are supported in `SliverSmartSearchList` via `SliverMainAxisGroup`.
-
 ## Accessibility
 
 TalkBack and VoiceOver work out of the box. Default widgets include semantic labels, tooltips, and result count announcements via `SemanticsService.sendAnnouncement()`.
@@ -213,7 +238,7 @@ Customize labels for localization:
 SmartSearchList<String>(
   accessibilityConfig: AccessibilityConfiguration(
     searchFieldLabel: 'Buscar frutas',
-    clearButtonLabel: 'Borrar busqueda',
+    clearButtonLabel: 'Borrar búsqueda',
     searchButtonLabel: 'Buscar',
     resultsAnnouncementBuilder: (count) {
       if (count == 0) return 'Sin resultados';
@@ -226,9 +251,13 @@ SmartSearchList<String>(
 
 Set `searchSemanticsEnabled: false` to disable all automatic semantics if you handle accessibility in your own builders.
 
-## Platform Support
+## Example App
 
-All platforms -- Android, iOS, Web, macOS, Windows, Linux. Pure Dart, no platform-specific code.
+The [example app](example/) includes 14 demos covering every feature: basic search, async pagination, fuzzy search, multi-select, grouped lists, sliver integration, accessibility, and more.
+
+```
+cd example && flutter run
+```
 
 ## License
 

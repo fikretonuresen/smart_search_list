@@ -46,7 +46,7 @@ class _AccessibilityExampleState extends State<AccessibilityExample> {
     if (_useSpanish) {
       return AccessibilityConfiguration(
         searchFieldLabel: 'Buscar frutas',
-        clearButtonLabel: 'Borrar busqueda',
+        clearButtonLabel: 'Borrar búsqueda',
         searchButtonLabel: 'Buscar',
         resultsAnnouncementBuilder: (count) {
           if (count == 0) return 'Sin resultados';

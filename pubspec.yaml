@@ -2,7 +2,7 @@ name: smart_search_list
 description: >-
   Searchable list widget for Flutter. Offline filtering, async loading, pagination,
   fuzzy search, grouped lists, and multi-select. Zero dependencies.
-version: 0.7.0
+version: 0.7.1
 repository: https://github.com/fikretonuresen/smart_search_list
 issue_tracker: https://github.com/fikretonuresen/smart_search_list/issues
 environment:
