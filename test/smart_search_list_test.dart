@@ -323,6 +323,309 @@ void main() {
       },
     );
 
+    // -----------------------------------------------------------------------
+    // Bug investigation tests — cache corruption and sort cache invalidation
+    // -----------------------------------------------------------------------
+
+    test('loadMore should not corrupt cached first-page results', () async {
+      final controller = SmartSearchController<String>(
+        pageSize: 2,
+        cacheResults: true,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
+        await Future.delayed(const Duration(milliseconds: 20));
+        if (page == 0) return ['Item A', 'Item B'];
+        if (page == 1) return ['Item C'];
+        return [];
+      });
+
+      // Cycle 1: search → cache miss → loadMore
+      controller.search('');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(controller.items.length, 2);
+
+      await controller.loadMore();
+      await Future.delayed(const Duration(milliseconds: 30));
+      expect(controller.items.length, 3);
+
+      // Cycle 2: re-search → cache HIT (now _filteredItems IS the cache entry)
+      controller.search('');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(
+        controller.items.length,
+        2,
+        reason: 'First cache read should return original 2 items',
+      );
+
+      // loadMore again — this mutates _filteredItems which IS the cache list
+      await controller.loadMore();
+      await Future.delayed(const Duration(milliseconds: 30));
+      expect(controller.items.length, 3);
+
+      // Cycle 3: re-search → cache HIT again — now the cache is corrupted
+      // because loadMore in cycle 2 mutated the cache list directly
+      controller.search('');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(
+        controller.items.length,
+        2,
+        reason:
+            'Cache should still contain original page 0 results (2 items), '
+            'not the corrupted list with loadMore results appended',
+      );
+
+      controller.dispose();
+    });
+
+    test('setSortBy should invalidate cache in async mode', () async {
+      int callCount = 0;
+      final controller = SmartSearchController<String>(
+        cacheResults: true,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
+        callCount++;
+        await Future.delayed(const Duration(milliseconds: 20));
+        return ['C', 'A', 'B'];
+      });
+
+      // First search — fetches from server, caches result
+      controller.search('');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(controller.items, ['C', 'A', 'B']);
+      final callsAfterFirstSearch = callCount;
+
+      // Change sort — should clear cache and re-fetch from server
+      controller.setSortBy((a, b) => a.compareTo(b));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // The async loader should have been called again (cache invalidated)
+      expect(
+        callCount,
+        greaterThan(callsAfterFirstSearch),
+        reason: 'setSortBy should invalidate cache and re-invoke async loader',
+      );
+
+      controller.dispose();
+    });
+
+    test('setSortBy should apply comparator in offline mode', () async {
+      final controller = SmartSearchController<String>(
+        searchableFields: (item) => [item],
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+
+      controller.setItems(['Cherry', 'Apple', 'Banana']);
+
+      // Sort ascending
+      controller.setSortBy((a, b) => a.compareTo(b));
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(controller.items, ['Apple', 'Banana', 'Cherry']);
+
+      // Sort descending
+      controller.setSortBy((a, b) => b.compareTo(a));
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(controller.items, ['Cherry', 'Banana', 'Apple']);
+
+      // Clear sort — items return to original order
+      controller.setSortBy(null);
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(controller.items, ['Cherry', 'Apple', 'Banana']);
+
+      controller.dispose();
+    });
+
+    // -----------------------------------------------------------------------
+    // Edge-case tests — disposal, concurrency, cache eviction, async contract
+    // -----------------------------------------------------------------------
+
+    test('loadMore after dispose should be a no-op', () async {
+      final controller = SmartSearchController<String>(
+        pageSize: 2,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+
+      int callCount = 0;
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
+        callCount++;
+        return ['Item ${page}A', 'Item ${page}B'];
+      });
+
+      controller.search('');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(callCount, 1);
+
+      controller.dispose();
+
+      // Should be a safe no-op — no crash, no additional call
+      await controller.loadMore();
+      expect(callCount, 1);
+    });
+
+    test('concurrent loadMore calls should not duplicate results', () async {
+      final controller = SmartSearchController<String>(
+        pageSize: 2,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
+        await Future.delayed(const Duration(milliseconds: 30));
+        if (page == 0) return ['A', 'B'];
+        if (page == 1) return ['C', 'D'];
+        return [];
+      });
+
+      controller.search('');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(controller.items.length, 2);
+
+      // Fire two loadMore calls concurrently — second should be guarded
+      final f1 = controller.loadMore();
+      final f2 = controller.loadMore();
+      await Future.wait([f1, f2]);
+      await Future.delayed(const Duration(milliseconds: 40));
+
+      expect(controller.items.length, 4);
+      expect(controller.items, ['A', 'B', 'C', 'D']);
+
+      controller.dispose();
+    });
+
+    test('cache should respect maxCacheSize eviction', () async {
+      final controller = SmartSearchController<String>(
+        cacheResults: true,
+        maxCacheSize: 2,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+
+      int callCount = 0;
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
+        callCount++;
+        return ['Result for: $query'];
+      });
+
+      // Fill cache with 2 entries: [a, b]
+      controller.search('a');
+      await Future.delayed(const Duration(milliseconds: 50));
+      controller.search('b');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(callCount, 2);
+
+      // 'a' should be cached — no new call
+      controller.search('a');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(callCount, 2);
+
+      // Add 'c' — FIFO evicts 'a' (oldest). Cache: [b, c]
+      controller.search('c');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(callCount, 3);
+
+      // 'a' was evicted — needs new call. FIFO evicts 'b'. Cache: [c, a]
+      controller.search('a');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(callCount, 4, reason: 'Evicted entry should trigger a new call');
+
+      // 'c' should still be cached — no new call
+      controller.search('c');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(callCount, 4, reason: 'Non-evicted entry should still be cached');
+
+      controller.dispose();
+    });
+
+    test('setSortBy in async mode should not client-sort results', () async {
+      final controller = SmartSearchController<String>(
+        cacheResults: true,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
+        return ['Z', 'A', 'M'];
+      });
+
+      // Set ascending sort before searching
+      controller.setSortBy((a, b) => a.compareTo(b));
+      controller.search('');
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // In async mode the comparator is NOT applied client-side —
+      // the async loader is responsible for its own sort order.
+      expect(controller.items, ['Z', 'A', 'M']);
+
+      controller.dispose();
+    });
+
+    test('search after loadMore should reset to page 0 results', () async {
+      final controller = SmartSearchController<String>(
+        pageSize: 2,
+        cacheResults: false,
+        debounceDelay: const Duration(milliseconds: 10),
+      );
+
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 20,
+      }) async {
+        await Future.delayed(const Duration(milliseconds: 20));
+        if (query == 'a') {
+          if (page == 0) return ['A1', 'A2'];
+          if (page == 1) return ['A3'];
+          return [];
+        }
+        if (page == 0) return ['B1', 'B2'];
+        return [];
+      });
+
+      controller.search('a');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(controller.items, ['A1', 'A2']);
+
+      await controller.loadMore();
+      await Future.delayed(const Duration(milliseconds: 30));
+      expect(controller.items, ['A1', 'A2', 'A3']);
+
+      // New search should reset page and results
+      controller.search('b');
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(controller.items, ['B1', 'B2']);
+      expect(controller.hasMorePages, true);
+
+      controller.dispose();
+    });
+
+    // -----------------------------------------------------------------------
+    // Existing tests
+    // -----------------------------------------------------------------------
+
     test('should refresh data correctly', () async {
       final controller = SmartSearchController<String>(
         searchableFields: (item) => [item],

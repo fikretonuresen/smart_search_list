@@ -146,11 +146,9 @@ class _AdvancedConfigExampleState extends State<AdvancedConfigExample> {
                   subtitle: Text('Brand: ${item.split(' ')[0]}'),
                 );
               },
-              searchConfig: SearchConfiguration(
+              searchConfig: const SearchConfiguration(
                 hintText: 'Search products...',
-                padding: const EdgeInsets.all(16.0),
-                caseSensitive: _caseSensitive,
-                minSearchLength: _minSearchLength,
+                padding: EdgeInsets.all(16.0),
               ),
               loadingStateBuilder: (context) {
                 return const Center(

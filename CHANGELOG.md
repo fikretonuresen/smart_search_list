@@ -1,3 +1,25 @@
+## 0.7.3 - 2026-02-13
+
+Fix cache corruption bug in pagination and sort cache invalidation, plus edge-case test coverage.
+
+### Bug Fixes
+- **Cache corruption fix**: `loadMore` no longer corrupts cached first-page results — cache reads now use a defensive copy to prevent `addAll` from mutating cached entries
+- **Sort cache invalidation**: `setSortBy` now clears the cache before re-searching, matching the documented behavior and the pattern used by `setFilter`, `updateCaseSensitive`, and other config-change methods
+- **Scroll listener leak**: `dispose()` now unconditionally removes scroll listeners, preventing a leak when pagination or keyboard config changed between `initState` and `dispose`
+
+### Documentation
+- **README**: Replaced `print()` in multi-select example with actionable `setState` pattern
+- **Example app**: Removed misleading `caseSensitive`/`minSearchLength` from `searchConfig` in `.controller()` mode advanced config example
+
+### Tests
+- 8 new controller tests: cache corruption (3-cycle), sort cache invalidation, sort offline mode, loadMore after dispose, concurrent loadMore guard, cache FIFO eviction, async sort contract, pagination reset after search
+- 212 tests total (up from 204)
+
+### Backward Compatibility
+- No breaking changes. Internal bug fixes only — no public API changes.
+
+---
+
 ## 0.7.2 - 2026-02-12
 
 Pre-publish polish: migration guide, SearchHighlightText test coverage, and pub.dev archive optimization.

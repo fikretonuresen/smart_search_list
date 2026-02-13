@@ -153,7 +153,10 @@ SmartSearchList<String>(
     showCheckbox: true,
     position: CheckboxPosition.leading,
   ),
-  onSelectionChanged: (selected) => print('${selected.length} selected'),
+  onSelectionChanged: (selected) {
+    // selected is a Set<String> of currently checked items
+    // Example: setState(() => _selectedItems = selected);
+  },
 )
 ```
 

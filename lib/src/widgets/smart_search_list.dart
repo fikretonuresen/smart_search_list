@@ -640,13 +640,11 @@ class _SmartSearchListState<T extends Object>
     _controller.removeListener(_onControllerChangedForAnnouncement);
     _searchTextController.removeListener(_onSearchTextChanged);
 
-    // Always remove scroll listeners before disposing
-    if (widget.paginationConfig?.enabled == true) {
-      _scrollController.removeListener(_onScroll);
-    }
-    if (widget.searchConfig.closeKeyboardOnScroll) {
-      _scrollController.removeListener(_handleKeyboardOnScroll);
-    }
+    // Unconditionally remove scroll listeners — config may have changed
+    // between initState and dispose, and removeListener is safe to call
+    // even if the listener was never added.
+    _scrollController.removeListener(_onScroll);
+    _scrollController.removeListener(_handleKeyboardOnScroll);
 
     // Only dispose the scroll controller if we created it internally
     if (widget.scrollController == null) {

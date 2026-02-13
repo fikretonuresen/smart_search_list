@@ -322,7 +322,8 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
     // Check cache first
     if (cacheResults && _cache.containsKey(cacheKey)) {
-      _filteredItems = _cache[cacheKey]!;
+      // Defensive copy — loadMore mutates _filteredItems via addAll.
+      _filteredItems = List.from(_cache[cacheKey]!);
       return;
     }
 
@@ -493,6 +494,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     if (_isDisposed) return;
 
     _currentComparator = comparator;
+    _clearCache();
     _performSearch(_searchQuery);
   }
 

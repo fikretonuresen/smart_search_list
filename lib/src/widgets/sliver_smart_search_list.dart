@@ -517,6 +517,8 @@ class _SliverSmartSearchListState<T extends Object>
   @override
   void dispose() {
     _isDisposed = true;
+    // No scroll listeners to remove — the parent CustomScrollView owns
+    // the scroll controller (contrast with SmartSearchList.dispose).
     _controller.removeListener(_onControllerChangedForAnnouncement);
     _controller.removeListener(_onControllerChanged);
 
