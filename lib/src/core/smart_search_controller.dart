@@ -310,9 +310,8 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
       await _loadAsyncData();
     } else {
       _applyFiltersAndSort();
+      _notifyListeners();
     }
-
-    _notifyListeners();
   }
 
   Future<void> _loadAsyncData() async {
@@ -324,6 +323,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     if (cacheResults && _cache.containsKey(cacheKey)) {
       // Defensive copy — loadMore mutates _filteredItems via addAll.
       _filteredItems = List.from(_cache[cacheKey]!);
+      _notifyListeners();
       return;
     }
 
@@ -573,6 +573,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   }
 
   void _addToCache(String key, List<T> items) {
+    // When maxCacheSize is 0, caching is effectively disabled.
+    if (maxCacheSize <= 0) return;
+
     if (_cacheKeys.length >= maxCacheSize) {
       final oldestKey = _cacheKeys.removeAt(0);
       _cache.remove(oldestKey);

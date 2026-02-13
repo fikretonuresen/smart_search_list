@@ -1,3 +1,47 @@
+## 0.7.5 - 2026-02-13
+
+Fix 3 widget lifecycle bugs and 1 cache crash, add 89 edge case and property-based tests.
+
+### Bug Fixes
+- **Scroll controller swap**: `SmartSearchList.didUpdateWidget` now handles `scrollController` prop changes — moves pagination and keyboard-dismiss listeners to the new controller, disposes internally-created ones, and tracks ownership correctly
+- **Accessibility toggle**: Changing `searchSemanticsEnabled` mid-lifecycle (without swapping the controller) now correctly adds or removes the announcement listener in both `SmartSearchList` and `SliverSmartSearchList`
+- **Cache crash**: `maxCacheSize=0` with `cacheResults=true` no longer throws `RangeError` — the eviction guard now checks `_cacheKeys.isNotEmpty` before removing, and `maxCacheSize=0` skips cache storage entirely
+
+### Tests
+- 89 new tests across 4 new test files:
+  - `bug_exposing_test.dart` (10): scroll controller swap, a11y toggle, sliver controller swap, maxCacheSize=0
+  - `controller_contract_test.dart` (49): every public method with boundary inputs, error recovery, concurrent operations, unmodifiable getters
+  - `edge_case_test.dart` (28): empty state discrimination, cache key collision, regex-unsafe characters in SearchHighlightText, empty searchableFields, boundary values (pageSize=1, fuzzyThreshold 0.0/1.0, maxCacheSize=1)
+  - `property_based_test.dart` (2): offline randomized (50 trials x 30 ops) and async randomized (20 trials x 15 ops) with invariant checking
+- 312 tests total (up from 223)
+
+### Backward Compatibility
+- No breaking changes. Internal bug fixes only — no public API changes.
+
+---
+
+## 0.7.4 - 2026-02-13
+
+Fix stale notification bug in async mode, improve pub.dev discoverability, and add disposal safety to README examples.
+
+### Bug Fixes
+- **Stale async notification**: Superseded async search requests no longer fire a redundant `notifyListeners()` from `_performSearch` — eliminates one unnecessary widget rebuild per superseded request
+
+### Documentation
+- **README**: Controller example now shows `dispose()` in a `StatefulWidget` context, consistent with the package's disposal safety emphasis
+
+### Metadata
+- **pub.dev topics**: Replaced generic `widget` and `pagination` with `fuzzy-search` and `accessibility` — both are unique differentiators with low competition for better discoverability
+
+### Tests
+- 11 new notification correctness tests: superseded request silence, rapid-fire supersession, cache hit notification, cache loader bypass, async success/error notification counts, offline synchronous correctness, disposal during pending async
+- 223 tests total (up from 212)
+
+### Backward Compatibility
+- No breaking changes. Internal notification timing fix only — no public API changes.
+
+---
+
 ## 0.7.3 - 2026-02-13
 
 Fix cache corruption bug in pagination and sort cache invalidation, plus edge-case test coverage.

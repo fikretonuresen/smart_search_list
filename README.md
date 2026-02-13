@@ -82,21 +82,41 @@ SmartSearchList<Product>.async(
 Use `.controller()` when you need programmatic access to search, filter, and sort state from outside the widget:
 
 ```dart
-final controller = SmartSearchController<Product>(
-  searchableFields: (p) => [p.name, p.category],
-);
+class ProductScreen extends StatefulWidget {
+  const ProductScreen({super.key});
+  @override
+  State<ProductScreen> createState() => _ProductScreenState();
+}
 
-// Apply filters and sorting externally
-controller.setFilter('in-stock', (p) => p.inStock);
-controller.setSortBy((a, b) => a.price.compareTo(b.price));
-controller.setItems(products);
+class _ProductScreenState extends State<ProductScreen> {
+  final controller = SmartSearchController<Product>(
+    searchableFields: (p) => [p.name, p.category],
+  );
 
-SmartSearchList<Product>.controller(
-  controller: controller,
-  itemBuilder: (context, product, index, {searchTerms = const []}) {
-    return ListTile(title: Text(product.name));
-  },
-)
+  @override
+  void initState() {
+    super.initState();
+    controller.setFilter('in-stock', (p) => p.inStock);
+    controller.setSortBy((a, b) => a.price.compareTo(b.price));
+    controller.setItems(products);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SmartSearchList<Product>.controller(
+      controller: controller,
+      itemBuilder: (context, product, index, {searchTerms = const []}) {
+        return ListTile(title: Text(product.name));
+      },
+    );
+  }
+}
 ```
 
 ## Search Highlighting

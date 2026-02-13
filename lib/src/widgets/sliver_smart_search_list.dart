@@ -493,6 +493,18 @@ class _SliverSmartSearchListState<T extends Object>
         _controller.addListener(_onControllerChangedForAnnouncement);
       }
     }
+
+    // Accessibility toggle outside controller-swap block: handles the case
+    // where searchSemanticsEnabled changes without the controller changing.
+    if (widget.controller == oldWidget.controller &&
+        widget.accessibilityConfig.searchSemanticsEnabled !=
+            oldWidget.accessibilityConfig.searchSemanticsEnabled) {
+      if (widget.accessibilityConfig.searchSemanticsEnabled) {
+        _controller.addListener(_onControllerChangedForAnnouncement);
+      } else {
+        _controller.removeListener(_onControllerChangedForAnnouncement);
+      }
+    }
   }
 
   void _onControllerChanged() {

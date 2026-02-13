@@ -430,6 +430,7 @@ class _SmartSearchListState<T extends Object>
 
   bool _isDisposed = false;
   bool _controllerCreatedInternally = false;
+  bool _scrollControllerCreatedInternally = false;
 
   /// Last result count announced to avoid duplicate screen reader announcements.
   int? _lastAnnouncedCount;
@@ -463,7 +464,12 @@ class _SmartSearchListState<T extends Object>
     }
 
     // Initialize scroll controller
-    _scrollController = widget.scrollController ?? ScrollController();
+    if (widget.scrollController != null) {
+      _scrollController = widget.scrollController!;
+    } else {
+      _scrollController = ScrollController();
+      _scrollControllerCreatedInternally = true;
+    }
 
     // Initialize text controller and focus node
     _searchTextController = TextEditingController();
@@ -532,6 +538,33 @@ class _SmartSearchListState<T extends Object>
       }
     }
 
+    // Scroll controller swap: detach listeners from old, attach to new.
+    // SliverSmartSearchList does not have this — the parent CustomScrollView
+    // owns the scroll controller there.
+    if (widget.scrollController != oldWidget.scrollController) {
+      _scrollController.removeListener(_onScroll);
+      _scrollController.removeListener(_handleKeyboardOnScroll);
+
+      if (_scrollControllerCreatedInternally) {
+        _scrollController.dispose();
+        _scrollControllerCreatedInternally = false;
+      }
+
+      if (widget.scrollController != null) {
+        _scrollController = widget.scrollController!;
+      } else {
+        _scrollController = ScrollController();
+        _scrollControllerCreatedInternally = true;
+      }
+
+      if (widget.paginationConfig?.enabled == true) {
+        _scrollController.addListener(_onScroll);
+      }
+      if (widget.searchConfig.closeKeyboardOnScroll) {
+        _scrollController.addListener(_handleKeyboardOnScroll);
+      }
+    }
+
     // External controller swap: detach old, attach new.
     // Note: only the announcement listener is removed here — the main rebuild
     // listener is managed by AnimatedBuilder (see _buildList), which handles
@@ -564,6 +597,18 @@ class _SmartSearchListState<T extends Object>
       }
       if (widget.accessibilityConfig.searchSemanticsEnabled) {
         _controller.addListener(_onControllerChangedForAnnouncement);
+      }
+    }
+
+    // Accessibility toggle outside controller-swap block: handles the case
+    // where searchSemanticsEnabled changes without the controller changing.
+    if (widget.controller == oldWidget.controller &&
+        widget.accessibilityConfig.searchSemanticsEnabled !=
+            oldWidget.accessibilityConfig.searchSemanticsEnabled) {
+      if (widget.accessibilityConfig.searchSemanticsEnabled) {
+        _controller.addListener(_onControllerChangedForAnnouncement);
+      } else {
+        _controller.removeListener(_onControllerChangedForAnnouncement);
       }
     }
   }
@@ -647,7 +692,7 @@ class _SmartSearchListState<T extends Object>
     _scrollController.removeListener(_handleKeyboardOnScroll);
 
     // Only dispose the scroll controller if we created it internally
-    if (widget.scrollController == null) {
+    if (_scrollControllerCreatedInternally) {
       _scrollController.dispose();
     }
 
