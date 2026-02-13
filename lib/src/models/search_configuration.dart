@@ -283,7 +283,8 @@ class SearchConfiguration {
   }) : assert(
          fuzzyThreshold >= 0.0 && fuzzyThreshold <= 1.0,
          'fuzzyThreshold must be between 0.0 and 1.0',
-       );
+       ),
+       assert(minSearchLength >= 0, 'minSearchLength must be non-negative');
 
   /// Returns a copy with the given fields replaced.
   SearchConfiguration copyWith({
@@ -466,7 +467,8 @@ class PaginationConfiguration {
     this.pageSize = 20,
     this.triggerDistance = 200.0,
     this.enabled = true,
-  });
+  }) : assert(pageSize > 0, 'pageSize must be positive'),
+       assert(triggerDistance >= 0, 'triggerDistance must be non-negative');
 
   /// Whether this configuration has valid values.
   bool get isValid => pageSize > 0 && triggerDistance >= 0;

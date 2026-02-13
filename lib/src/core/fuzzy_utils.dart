@@ -27,7 +27,8 @@ class FuzzyMatchResult {
   final List<int> matchIndices;
 
   /// Creates a match result with the given [score] and [matchIndices].
-  const FuzzyMatchResult({required this.score, required this.matchIndices});
+  const FuzzyMatchResult({required this.score, required this.matchIndices})
+    : assert(score >= 0.01 && score <= 1.0, 'Score must be in [0.01, 1.0]');
 
   /// Returns a human-readable representation including score and indices.
   @override
@@ -110,6 +111,10 @@ abstract final class FuzzyMatcher {
         if (best.score == 1.0) break; // Can't beat an exact match.
       }
     }
+    assert(
+      best == null || (best.score >= 0.01 && best.score <= 1.0),
+      'Best match score must be in [0.01, 1.0] when present',
+    );
     return best;
   }
 
@@ -148,6 +153,21 @@ abstract final class FuzzyMatcher {
         }
       }
     }
+
+    assert(
+      indices.length == qLen,
+      'Subsequence indices length must equal query length',
+    );
+    assert(() {
+      for (var i = 1; i < indices.length; i++) {
+        if (indices[i] <= indices[i - 1]) return false;
+      }
+      return true;
+    }(), 'Subsequence indices must be strictly increasing');
+    assert(
+      indices.every((idx) => idx >= 0 && idx < t.length),
+      'All subsequence indices must be within text bounds',
+    );
 
     return FuzzyMatchResult(
       score: _score(q, t, indices),
@@ -200,12 +220,20 @@ abstract final class FuzzyMatcher {
     final atBoundary = firstIndex == 0 || _isWordBoundary(t, firstIndex);
     final boundaryBonus = atBoundary ? 1.0 : 0.0;
 
+    assert(
+      consecutiveRatio >= 0.0 && consecutiveRatio <= 1.0,
+      'consecutiveRatio out of [0,1]',
+    );
+    assert(density > 0.0 && density <= 1.0, 'density out of (0,1]');
+
     // Weighted sum.
     final raw =
         (consecutiveRatio * 0.50) +
         (density * 0.25) +
         (position * 0.15) +
         (boundaryBonus * 0.10);
+
+    assert(raw.isFinite, 'Raw score must be finite');
 
     // Clamp to (0, 1) – never return 1.0 for non-exact matches.
     return raw.clamp(0.01, 0.99);
@@ -276,6 +304,19 @@ abstract final class FuzzyMatcher {
         ((0.6 - distancePenalty * 0.3) + boundaryBonus + positionBonus * 0.05)
             .clamp(0.01, 0.59);
 
+    assert(
+      score >= 0.01 && score <= 0.59,
+      'Edit distance score must be in [0.01, 0.59]',
+    );
+    assert(
+      indices.isNotEmpty,
+      'Edit distance match must have non-empty indices',
+    );
+    assert(
+      indices.every((idx) => idx >= 0 && idx < tLen),
+      'Edit distance indices must be within text bounds',
+    );
+
     return FuzzyMatchResult(score: score, matchIndices: indices);
   }
 
@@ -314,6 +355,7 @@ abstract final class FuzzyMatcher {
       if (rowMin > max) return max + 1;
     }
 
+    assert(row[bLen] >= 0, 'Levenshtein distance must be non-negative');
     return row[bLen];
   }
 

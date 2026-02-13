@@ -462,6 +462,10 @@ class _SmartSearchListState<T extends Object>
       );
       _controllerCreatedInternally = true;
     }
+    assert(
+      !_controller.isDisposed,
+      'Controller must not be disposed at initState',
+    );
 
     // Initialize scroll controller
     if (widget.scrollController != null) {
@@ -595,6 +599,14 @@ class _SmartSearchListState<T extends Object>
         _controllerCreatedInternally = true;
         _initializeData();
       }
+      assert(
+        !_controller.isDisposed,
+        'Controller must not be disposed after swap',
+      );
+      assert(
+        (widget.controller != null) != _controllerCreatedInternally,
+        '_controllerCreatedInternally must be consistent with widget.controller',
+      );
       if (widget.accessibilityConfig.searchSemanticsEnabled) {
         _controller.addListener(_onControllerChangedForAnnouncement);
       }

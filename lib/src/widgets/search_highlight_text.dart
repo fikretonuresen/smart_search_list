@@ -148,6 +148,10 @@ class SearchHighlightText extends StatelessWidget {
         caseSensitive: caseSensitive,
       );
       if (result != null) {
+        assert(
+          result.matchIndices.every((idx) => idx >= 0 && idx < text.length),
+          'FuzzyMatcher returned out-of-bounds indices',
+        );
         for (final idx in result.matchIndices) {
           if (idx < text.length) matched[idx] = true;
         }
@@ -165,6 +169,10 @@ class SearchHighlightText extends StatelessWidget {
     List<bool> matched,
     TextStyle matchStyle,
   ) {
+    assert(
+      matched.length == text.length,
+      'Match array length must equal text length',
+    );
     final spans = <TextSpan>[];
     var i = 0;
 

@@ -1,0 +1,3 @@
+tags:
+  stress:
+    skip: "Stress tests are long-running. Run: flutter test -t stress --run-skipped"

@@ -407,6 +407,10 @@ class _SliverSmartSearchListState<T extends Object>
       );
       _controllerCreatedInternally = true;
     }
+    assert(
+      !_controller.isDisposed,
+      'Controller must not be disposed at initState',
+    );
 
     // Listen to controller changes
     _controller.addListener(_onControllerChanged);
@@ -488,6 +492,14 @@ class _SliverSmartSearchListState<T extends Object>
         _controllerCreatedInternally = true;
         _initializeData();
       }
+      assert(
+        !_controller.isDisposed,
+        'Controller must not be disposed after swap',
+      );
+      assert(
+        (widget.controller != null) != _controllerCreatedInternally,
+        '_controllerCreatedInternally must be consistent with widget.controller',
+      );
       _controller.addListener(_onControllerChanged);
       if (widget.accessibilityConfig.searchSemanticsEnabled) {
         _controller.addListener(_onControllerChangedForAnnouncement);

@@ -1,22 +1,14 @@
 ## 0.7.5 - 2026-02-13
 
-Fix 3 widget lifecycle bugs and 1 cache crash, add 89 edge case and property-based tests.
+Fix 3 widget lifecycle bugs and 1 cache crash, add 89 edge case and property-based tests (312 total).
 
 ### Bug Fixes
 - **Scroll controller swap**: `SmartSearchList.didUpdateWidget` now handles `scrollController` prop changes — moves pagination and keyboard-dismiss listeners to the new controller, disposes internally-created ones, and tracks ownership correctly
 - **Accessibility toggle**: Changing `searchSemanticsEnabled` mid-lifecycle (without swapping the controller) now correctly adds or removes the announcement listener in both `SmartSearchList` and `SliverSmartSearchList`
 - **Cache crash**: `maxCacheSize=0` with `cacheResults=true` no longer throws `RangeError` — the eviction guard now checks `_cacheKeys.isNotEmpty` before removing, and `maxCacheSize=0` skips cache storage entirely
 
-### Tests
-- 89 new tests across 4 new test files:
-  - `bug_exposing_test.dart` (10): scroll controller swap, a11y toggle, sliver controller swap, maxCacheSize=0
-  - `controller_contract_test.dart` (49): every public method with boundary inputs, error recovery, concurrent operations, unmodifiable getters
-  - `edge_case_test.dart` (28): empty state discrimination, cache key collision, regex-unsafe characters in SearchHighlightText, empty searchableFields, boundary values (pageSize=1, fuzzyThreshold 0.0/1.0, maxCacheSize=1)
-  - `property_based_test.dart` (2): offline randomized (50 trials x 30 ops) and async randomized (20 trials x 15 ops) with invariant checking
-- 312 tests total (up from 223)
-
-### Backward Compatibility
-- No breaking changes. Internal bug fixes only — no public API changes.
+### Internal
+- **Debug assertions**: Added 49 `assert()` statements across 6 lib/ files for earlier detection of invalid state in debug mode — no impact in release builds
 
 ---
 
@@ -33,13 +25,6 @@ Fix stale notification bug in async mode, improve pub.dev discoverability, and a
 ### Metadata
 - **pub.dev topics**: Replaced generic `widget` and `pagination` with `fuzzy-search` and `accessibility` — both are unique differentiators with low competition for better discoverability
 
-### Tests
-- 11 new notification correctness tests: superseded request silence, rapid-fire supersession, cache hit notification, cache loader bypass, async success/error notification counts, offline synchronous correctness, disposal during pending async
-- 223 tests total (up from 212)
-
-### Backward Compatibility
-- No breaking changes. Internal notification timing fix only — no public API changes.
-
 ---
 
 ## 0.7.3 - 2026-02-13
@@ -55,13 +40,6 @@ Fix cache corruption bug in pagination and sort cache invalidation, plus edge-ca
 - **README**: Replaced `print()` in multi-select example with actionable `setState` pattern
 - **Example app**: Removed misleading `caseSensitive`/`minSearchLength` from `searchConfig` in `.controller()` mode advanced config example
 
-### Tests
-- 8 new controller tests: cache corruption (3-cycle), sort cache invalidation, sort offline mode, loadMore after dispose, concurrent loadMore guard, cache FIFO eviction, async sort contract, pagination reset after search
-- 212 tests total (up from 204)
-
-### Backward Compatibility
-- No breaking changes. Internal bug fixes only — no public API changes.
-
 ---
 
 ## 0.7.2 - 2026-02-12
@@ -72,15 +50,6 @@ Pre-publish polish: migration guide, SearchHighlightText test coverage, and pub.
 - **Migration guide**: Added "Upgrading from v0.6.x" section to README with constructor migration instructions
 - **GIF exclusion**: Added `doc/images/*.gif` to `.pubignore` to save ~2.3 MB from pub.dev archive (GIFs load from GitHub raw URLs)
 - **Example README**: Replaced boilerplate with table listing all 14 demos
-
-### Tests
-- **SearchHighlightText tests**: 15 new tests covering exact/multi-term/overlapping highlighting, fuzzy matching, case sensitivity, custom styles, empty/no-match edge cases, and Unicode (accented, CJK)
-- **Null searchableFields test**: Verifies controller with `searchableFields: null` passes all items through unfiltered on search
-- **Sliver offline constructor test**: Verifies offline constructor initializes data and handles item changes via `didUpdateWidget`
-- 204 tests total (up from 187)
-
-### Backward Compatibility
-- No breaking changes. No library code changes.
 
 ---
 
@@ -97,9 +66,6 @@ README rewrite for pub.dev readiness with problem-solution opening, vertical GIF
 
 ### Bug Fixes
 - **Spanish localization typo**: Fixed `'Borrar busqueda'` to `'Borrar búsqueda'` in README and accessibility example
-
-### Backward Compatibility
-- No breaking changes. No library code changes.
 
 ---
 
@@ -152,14 +118,6 @@ Dartdoc overhaul, bug fixes, and sliver test coverage.
 - Filter/sort async vs offline behavior clarified, `ItemBuilder.searchTerms` lifecycle documented
 - Aligned `SliverSmartSearchList` docs with `SmartSearchList` for `asyncLoader`, `groupBy`, and `accessibilityConfig`
 
-### Tests
-- 31 new `SliverSmartSearchList` tests covering rendering, search, grouped views, empty/error/loading states, interactions, controller lifecycle, `didUpdateWidget`, async data, filtering, and sorting
-- 187 tests total (up from 156)
-
-### Backward Compatibility
-- No public API changes — all fixes are internal behavior and documentation
-- Existing code continues to work without modifications
-
 ---
 
 ## 0.6.0 - 2026-02-10
@@ -169,13 +127,6 @@ Bug fixes and widget tests. Widgets now react to prop changes, cache key correct
 ### Bug Fixes
 - **`didUpdateWidget` support**: `SmartSearchList` and `SliverSmartSearchList` now react to parent rebuilds — changing `items`, `asyncLoader`, `caseSensitive`, `minSearchLength`, `fuzzySearchEnabled`, `fuzzyThreshold`, or swapping an external controller after initial build now works correctly
 - **Cache key fix**: Calling `setFilter` with the same key but a different predicate no longer returns stale cached results — cache key now includes a filter predicate version counter
-
-### Tests
-- 11 widget-level test scenarios covering rendering, filtering, empty/error states, `didUpdateWidget` (items and async loader swap), selection, grouping, pagination, and disposal safety
-
-### Backward Compatibility
-- No public API changes — all fixes are internal behavior corrections
-- Existing code continues to work without modifications
 
 ---
 
@@ -189,10 +140,6 @@ Improved screen reader announcements for more reliable TalkBack/VoiceOver suppor
 
 ### Requirements
 - Minimum Flutter version bumped from 3.13.0 to **3.35.0** (required for `SemanticsService.sendAnnouncement`)
-
-### Backward Compatibility
-- No public API changes — all parameters and behavior remain the same
-- Existing code continues to work without modifications on Flutter 3.35+
 
 ---
 
@@ -219,10 +166,6 @@ Accessibility support with TalkBack/VoiceOver and full localization control.
 
 ### Example Updates
 - New **Accessibility** example demonstrating localized labels and custom announcement text
-
-### Backward Compatibility
-- All new parameters are optional with sensible defaults
-- Existing code continues to work without modifications
 
 ---
 
@@ -259,11 +202,6 @@ Fuzzy search with typo-tolerant matching, scored ranking, and built-in highlight
 
 ### Example Updates
 - New **Fuzzy Search** example: toggle fuzzy on/off, adjust threshold, SearchHighlightText demo
-
-### Backward Compatibility
-- All new parameters are optional with sensible defaults
-- Fuzzy search is opt-in (`fuzzySearchEnabled: false` by default)
-- Existing code continues to work without modifications
 
 ---
 
@@ -343,10 +281,6 @@ Multi-select, grouped lists, and search trigger modes.
 - New **Multi-Select** example: checkbox list with select all/deselect all
 - New **Grouped List** example: products grouped by category with search
 
-### Backward Compatibility
-- All new parameters are optional with sensible defaults
-- Existing code continues to work without modifications
-
 ---
 
 ## 0.1.1 - 2026-01-31
@@ -371,11 +305,6 @@ Search term highlighting support and below-search widget slot.
 - All examples updated with search terms highlighting support
 - Pull-to-refresh enabled across all example pages
 - Improved user experience with better visual feedback
-
-### Backward Compatibility
-- All changes are backward compatible
-- Existing code continues to work without modifications
-- `searchTerms` parameter is optional and defaults to empty list
 
 ---
 

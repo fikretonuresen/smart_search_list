@@ -37,7 +37,18 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   }) : _caseSensitive = caseSensitive,
        _minSearchLength = minSearchLength,
        _fuzzySearchEnabled = fuzzySearchEnabled,
-       _fuzzyThreshold = fuzzyThreshold;
+       _fuzzyThreshold = fuzzyThreshold,
+       assert(maxCacheSize >= 0, 'maxCacheSize must be non-negative'),
+       assert(pageSize > 0, 'pageSize must be positive'),
+       assert(
+         fuzzyThreshold >= 0.0 && fuzzyThreshold <= 1.0,
+         'fuzzyThreshold must be in [0.0, 1.0]',
+       ),
+       assert(minSearchLength >= 0, 'minSearchLength must be non-negative'),
+       assert(
+         debounceDelay >= Duration.zero,
+         'debounceDelay must be non-negative',
+       );
 
   /// Delay for search debouncing.
   final Duration debounceDelay;
@@ -165,6 +176,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
   /// Updates the minimum search length and re-searches if needed.
   void updateMinSearchLength(int value) {
+    assert(value >= 0, 'minSearchLength must be non-negative');
     if (_isDisposed || _minSearchLength == value) return;
 
     _minSearchLength = value;
@@ -184,6 +196,10 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
     _allItems = List.from(items);
     _applyFiltersAndSort();
+    assert(
+      _filteredItems.length <= _allItems.length,
+      'Filtered items cannot exceed all items after setItems',
+    );
     _notifyListeners();
   }
 
@@ -237,6 +253,12 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   void selectAll() {
     if (_isDisposed) return;
     _selectedItems.addAll(_filteredItems);
+    assert(() {
+      for (final item in _filteredItems) {
+        if (!_selectedItems.contains(item)) return false;
+      }
+      return true;
+    }(), 'All filtered items must be selected after selectAll');
     _notifyListeners();
   }
 
@@ -245,6 +267,10 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     if (_isDisposed) return;
     if (_selectedItems.isEmpty) return;
     _selectedItems.clear();
+    assert(
+      _selectedItems.isEmpty,
+      'Selected items must be empty after deselectAll',
+    );
     _notifyListeners();
   }
 
@@ -306,6 +332,9 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _hasMorePages = true;
     _setError(null);
 
+    assert(_hasSearched, 'hasSearched must be true after search begins');
+    assert(_currentPage == 0, 'Page must reset to 0 on new search');
+
     if (_asyncLoader != null) {
       await _loadAsyncData();
     } else {
@@ -343,6 +372,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
       _filteredItems = results;
       _hasMorePages = results.length == pageSize;
+      assert(_error == null, 'Error must be null after successful async load');
 
       // Cache results
       if (cacheResults) {
@@ -354,6 +384,7 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     } finally {
       if (!_isDisposed && currentRequestId == _requestId) {
         _setLoading(false);
+        assert(!_isLoading, 'isLoading must be false after setLoading(false)');
       }
     }
   }
@@ -405,6 +436,11 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     }
 
     _filteredItems = filtered;
+    assert(
+      _filteredItems.length <= _allItems.length,
+      'Filtered items cannot exceed all items',
+    );
+    assert(!_isLoading, 'isLoading must be false during offline filtering');
   }
 
   /// Scores, filters, and ranks items using fuzzy subsequence matching.
@@ -430,6 +466,10 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     // Sort descending by score (highest first).
     scored.sort((a, b) => b.score.compareTo(a.score));
 
+    assert(
+      scored.length <= items.length,
+      'Fuzzy results cannot exceed input items',
+    );
     return scored.map((s) => s.item).toList();
   }
 
@@ -451,6 +491,10 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
     _activeFilters[key] = predicate;
     _filterVersion++;
+    assert(
+      _filterVersion > 0,
+      'Filter version must be positive after increment',
+    );
     _performSearch(_searchQuery);
   }
 
@@ -476,6 +520,10 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     if (_isDisposed) return;
 
     _activeFilters.clear();
+    assert(
+      _activeFilters.isEmpty,
+      'Active filters must be empty after clearFilters',
+    );
     _filterVersion++;
     _performSearch(_searchQuery);
   }
@@ -538,6 +586,10 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     } finally {
       if (!_isDisposed && currentRequestId == _requestId) {
         _isLoadingMore = false;
+        assert(
+          !_isLoadingMore,
+          'isLoadingMore must be false after loadMore completes',
+        );
         _notifyListeners();
       }
     }
@@ -550,6 +602,11 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
     _clearCache();
     _currentPage = 0;
     _hasMorePages = true;
+    assert(
+      _currentPage == 0 && _hasMorePages,
+      'Refresh must reset pagination state',
+    );
+    assert(_cache.isEmpty, 'Cache must be empty after refresh clear');
     await _performSearch(_searchQuery);
   }
 
@@ -583,11 +640,23 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
     _cache[key] = List.from(items);
     _cacheKeys.add(key);
+    assert(
+      _cache.length == _cacheKeys.length,
+      'Cache map and key list must stay in sync',
+    );
+    assert(
+      maxCacheSize <= 0 || _cache.length <= maxCacheSize,
+      'Cache size must not exceed maxCacheSize',
+    );
   }
 
   void _clearCache() {
     _cache.clear();
     _cacheKeys.clear();
+    assert(
+      _cache.isEmpty && _cacheKeys.isEmpty,
+      'Cache must be empty after clear',
+    );
   }
 
   void _setLoading(bool loading) {
@@ -625,6 +694,10 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
 
   /// Updates fuzzy threshold and re-searches if needed.
   void updateFuzzyThreshold(double value) {
+    assert(
+      value >= 0.0 && value <= 1.0,
+      'fuzzyThreshold must be in [0.0, 1.0]',
+    );
     if (_isDisposed || _fuzzyThreshold == value) return;
 
     _fuzzyThreshold = value;
@@ -640,8 +713,13 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   void dispose() {
     _isDisposed = true;
     _debounceTimer?.cancel();
+    _debounceTimer = null;
     _selectedItems.clear();
     _clearCache();
+    assert(
+      _selectedItems.isEmpty && _cache.isEmpty && _cacheKeys.isEmpty,
+      'All collections must be cleared during disposal',
+    );
     super.dispose();
   }
 }
