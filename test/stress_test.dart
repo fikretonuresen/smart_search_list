@@ -42,122 +42,17 @@ void main() {
           minSearchLength: swarm.minSearchLength,
           pageSize: swarm.pageSize,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         final baseItems = List.generate(20, (i) => 'Item$i');
         controller.setItems(baseItems);
 
         for (var op = 0; op < 100; op++) {
-          final operation = rng.nextInt(18);
+          final operation = rng.nextInt(offlineOpCount);
           try {
-            switch (operation) {
-              case 0:
-                final newItems = List.generate(rng.nextInt(30), (i) => 'New$i');
-                controller.setItems(newItems);
-              case 1:
-                final queries = ['', 'Item', 'New', 'X', 'a', 'Item1', 'ew0'];
-                controller.searchImmediate(
-                  queries[rng.nextInt(queries.length)],
-                );
-              case 2:
-                controller.clearSearch();
-                expect(
-                  controller.searchQuery,
-                  '',
-                  reason: _tag(seed, trial, op, 'clearSearch → query empty'),
-                );
-              case 3:
-                final filters = [
-                  ('even', (String s) => s.hashCode.isEven),
-                  ('short', (String s) => s.length <= 5),
-                  ('has1', (String s) => s.contains('1')),
-                ];
-                final f = filters[rng.nextInt(filters.length)];
-                controller.setFilter(f.$1, f.$2);
-              case 4:
-                final keys = ['even', 'short', 'has1'];
-                controller.removeFilter(keys[rng.nextInt(keys.length)]);
-              case 5:
-                controller.clearFilters();
-                expect(
-                  controller.activeFilters.isEmpty,
-                  true,
-                  reason: _tag(seed, trial, op, 'clearFilters → filters empty'),
-                );
-              case 6:
-                if (rng.nextBool()) {
-                  controller.setSortBy((a, b) => a.compareTo(b));
-                } else {
-                  controller.setSortBy(null);
-                }
-              case 7:
-                controller.selectAll();
-                for (final item in controller.items) {
-                  expect(
-                    controller.selectedItems.contains(item),
-                    true,
-                    reason: _tag(seed, trial, op, 'selectAll → $item selected'),
-                  );
-                }
-              case 8:
-                controller.deselectAll();
-                expect(
-                  controller.selectedItems.isEmpty,
-                  true,
-                  reason: _tag(seed, trial, op, 'deselectAll → empty'),
-                );
-              case 9:
-                if (controller.items.isNotEmpty) {
-                  final idx = rng.nextInt(controller.items.length);
-                  controller.select(controller.items[idx]);
-                }
-              case 10:
-                if (controller.items.isNotEmpty) {
-                  final idx = rng.nextInt(controller.items.length);
-                  controller.deselect(controller.items[idx]);
-                }
-              case 11:
-                if (controller.items.isNotEmpty) {
-                  final idx = rng.nextInt(controller.items.length);
-                  controller.toggleSelection(controller.items[idx]);
-                }
-              case 12:
-                controller.selectWhere((s) => s.length > 4);
-              case 13:
-                controller.deselectWhere((s) => s.contains('0'));
-              case 14:
-                final v = rng.nextBool();
-                controller.updateCaseSensitive(v);
-                expect(
-                  controller.caseSensitive,
-                  v,
-                  reason: _tag(seed, trial, op, 'caseSensitive == $v'),
-                );
-              case 15:
-                final v = rng.nextBool();
-                controller.updateFuzzySearchEnabled(v);
-                expect(
-                  controller.fuzzySearchEnabled,
-                  v,
-                  reason: _tag(seed, trial, op, 'fuzzySearchEnabled == $v'),
-                );
-              case 16:
-                final v = rng.nextDouble();
-                controller.updateFuzzyThreshold(v);
-                expect(
-                  controller.fuzzyThreshold,
-                  v,
-                  reason: _tag(seed, trial, op, 'fuzzyThreshold == $v'),
-                );
-              case 17:
-                final v = rng.nextInt(4);
-                controller.updateMinSearchLength(v);
-                expect(
-                  controller.minSearchLength,
-                  v,
-                  reason: _tag(seed, trial, op, 'minSearchLength == $v'),
-                );
-            }
-
+            dispatchOfflineOp(controller, rng, operation, seed, trial, op);
             checkOfflineInvariants(controller, seed, trial, op);
           } catch (e) {
             fail(
@@ -193,6 +88,9 @@ void main() {
           maxCacheSize: swarm.maxCacheSize,
           pageSize: swarm.pageSize,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         Future<List<String>> loader(
           String query, {
@@ -219,94 +117,22 @@ void main() {
         controller.setAsyncLoader(loader);
 
         for (var op = 0; op < 50; op++) {
-          final operation = rng.nextInt(10);
+          final operation = rng.nextInt(asyncOpCount);
           state.shouldFail = rng.nextInt(5) == 0;
           state.failureType = rng.nextInt(4);
           state.returnMode = rng.nextInt(4);
 
           try {
-            switch (operation) {
-              case 0:
-                controller.searchImmediate('q${rng.nextInt(5)}');
-                await Future.microtask(() {});
-                await Future.microtask(() {});
-              case 1:
-                state.shouldFail = false;
-                controller.clearSearch();
-                await Future.microtask(() {});
-                await Future.microtask(() {});
-                expect(
-                  controller.searchQuery,
-                  '',
-                  reason: _tag(
-                    seed,
-                    trial,
-                    op,
-                    'async clearSearch → query empty',
-                  ),
-                );
-              case 2:
-                await controller.loadMore();
-                await Future.microtask(() {});
-              case 3:
-                await controller.refresh();
-                await Future.microtask(() {});
-              case 4:
-                state.shouldFail = false;
-                final queryBefore = controller.searchQuery;
-                await controller.retry();
-                await Future.microtask(() {});
-                expect(
-                  controller.searchQuery,
-                  queryBefore,
-                  reason: _tag(seed, trial, op, 'retry preserves searchQuery'),
-                );
-              case 5:
-                final filters = [
-                  ('even', (String s) => s.hashCode.isEven),
-                  ('short', (String s) => s.length <= 8),
-                ];
-                final f = filters[rng.nextInt(filters.length)];
-                controller.setFilter(f.$1, f.$2);
-                await Future.microtask(() {});
-                await Future.microtask(() {});
-              case 6:
-                final keys = ['even', 'short'];
-                controller.removeFilter(keys[rng.nextInt(keys.length)]);
-                await Future.microtask(() {});
-                await Future.microtask(() {});
-              case 7:
-                controller.clearFilters();
-                await Future.microtask(() {});
-                await Future.microtask(() {});
-                expect(
-                  controller.activeFilters.isEmpty,
-                  true,
-                  reason: _tag(seed, trial, op, 'async clearFilters → empty'),
-                );
-              case 8:
-                if (rng.nextBool()) {
-                  controller.setSortBy((a, b) => a.compareTo(b));
-                } else {
-                  controller.setSortBy(null);
-                }
-                await Future.microtask(() {});
-                await Future.microtask(() {});
-              case 9:
-                final queryBefore = controller.searchQuery;
-                controller.setAsyncLoader(loader);
-                expect(
-                  controller.searchQuery,
-                  queryBefore,
-                  reason: _tag(
-                    seed,
-                    trial,
-                    op,
-                    'setAsyncLoader preserves query',
-                  ),
-                );
-            }
-
+            await dispatchAsyncOp(
+              controller,
+              state,
+              loader,
+              rng,
+              operation,
+              seed,
+              trial,
+              op,
+            );
             checkAsyncInvariants(controller, seed, trial, op);
           } catch (e) {
             fail(
@@ -349,7 +175,10 @@ void main() {
 
           // Cycle through query generators.
           final generatorType = pair % 4;
-          final text = randomText(rng, 5, 40);
+          // Alternate between ASCII and mixed-Unicode text
+          final text = pair.isEven
+              ? randomText(rng, 5, 40)
+              : randomMixedText(rng, 5, 40);
           late String query;
 
           switch (generatorType) {
@@ -503,7 +332,15 @@ void main() {
                 if (state.searchEnabled) {
                   final finder = find.byType(TextField);
                   if (finder.evaluate().isNotEmpty) {
-                    final queries = ['', 'Item', 'X', 'a', 'Item1'];
+                    final queries = [
+                      '',
+                      'Item',
+                      'X',
+                      'a',
+                      'Item1',
+                      ' ',
+                      'Ítém',
+                    ];
                     await tester.enterText(
                       finder,
                       queries[rng.nextInt(queries.length)],
@@ -547,6 +384,9 @@ void main() {
                     searchableFields: (item) => [item],
                     debounceDelay: const Duration(milliseconds: 10),
                   );
+                  addTearDown(() {
+                    if (!ctrl.isDisposed) ctrl.dispose();
+                  });
                   ctrl.setItems(state.items);
                   state.externalController = ctrl;
                 } else {

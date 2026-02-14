@@ -225,4 +225,102 @@ void main() {
       },
     );
   });
+
+  // ===========================================================================
+  // ListConfiguration passthrough tests
+  // ===========================================================================
+
+  group('ListConfiguration passthrough', () {
+    Widget buildWithConfig(
+      ListConfiguration config, {
+      bool withSeparator = false,
+    }) {
+      return MaterialApp(
+        home: Scaffold(
+          body: SmartSearchList<String>(
+            items: const ['Apple', 'Banana', 'Cherry'],
+            searchableFields: (item) => [item],
+            itemBuilder: (context, item, index, {searchTerms = const []}) {
+              return ListTile(title: Text(item));
+            },
+            listConfig: config,
+            separatorBuilder: withSeparator
+                ? (context, index) => const Divider(key: Key('sep'))
+                : null,
+          ),
+        ),
+      );
+    }
+
+    testWidgets('separatorBuilder renders dividers', (tester) async {
+      await tester.pumpWidget(
+        buildWithConfig(const ListConfiguration(), withSeparator: true),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('sep')), findsWidgets);
+    });
+
+    testWidgets('physics passes through to ListView', (tester) async {
+      await tester.pumpWidget(
+        buildWithConfig(
+          const ListConfiguration(physics: NeverScrollableScrollPhysics()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.physics, isA<NeverScrollableScrollPhysics>());
+    });
+
+    testWidgets('padding passes through to ListView', (tester) async {
+      await tester.pumpWidget(
+        buildWithConfig(const ListConfiguration(padding: EdgeInsets.all(32))),
+      );
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.padding, const EdgeInsets.all(32));
+    });
+
+    testWidgets('shrinkWrap passes through to ListView', (tester) async {
+      await tester.pumpWidget(
+        buildWithConfig(const ListConfiguration(shrinkWrap: true)),
+      );
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.shrinkWrap, true);
+    });
+
+    testWidgets('reverse passes through to ListView', (tester) async {
+      await tester.pumpWidget(
+        buildWithConfig(const ListConfiguration(reverse: true)),
+      );
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.reverse, true);
+    });
+
+    testWidgets('itemExtent passes through to ListView', (tester) async {
+      await tester.pumpWidget(
+        buildWithConfig(const ListConfiguration(itemExtent: 80.0)),
+      );
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.itemExtent, 80.0);
+    });
+
+    testWidgets('clipBehavior passes through to ListView', (tester) async {
+      await tester.pumpWidget(
+        buildWithConfig(const ListConfiguration(clipBehavior: Clip.antiAlias)),
+      );
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView));
+      expect(listView.clipBehavior, Clip.antiAlias);
+    });
+  });
 }

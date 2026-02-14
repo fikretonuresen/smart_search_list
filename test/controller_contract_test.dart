@@ -14,6 +14,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
       controller.searchImmediate('App');
@@ -23,8 +26,6 @@ void main() {
       controller.clearSearch();
       expect(controller.searchQuery, '');
       expect(controller.items.length, 3);
-
-      controller.dispose();
     });
 
     test('is no-op after dispose', () {
@@ -32,6 +33,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
       controller.searchImmediate('App');
@@ -47,14 +51,15 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       controller.clearSearch();
 
       expect(controller.searchQuery, '');
       expect(controller.items.length, 2);
-
-      controller.dispose();
     });
   });
 
@@ -68,14 +73,15 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(seconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       controller.searchImmediate('App');
 
       // Should have results immediately, not after 10 seconds
       expect(controller.items, ['Apple']);
-
-      controller.dispose();
     });
 
     test('respects minSearchLength', () {
@@ -84,6 +90,9 @@ void main() {
         debounceDelay: Duration.zero,
         minSearchLength: 3,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       controller.searchImmediate('Ap');
@@ -93,8 +102,6 @@ void main() {
 
       controller.searchImmediate('App');
       expect(controller.items, ['Apple']);
-
-      controller.dispose();
     });
 
     test('empty string shows all items', () {
@@ -102,6 +109,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       controller.searchImmediate('App');
@@ -109,8 +119,6 @@ void main() {
 
       controller.searchImmediate('');
       expect(controller.items.length, 2);
-
-      controller.dispose();
     });
 
     test('cancels pending debounced search', () async {
@@ -118,6 +126,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 200),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
 
@@ -131,8 +142,6 @@ void main() {
       // Wait for debounce — should NOT revert to 'Ban'
       await Future.delayed(const Duration(milliseconds: 300));
       expect(controller.items, ['Cherry']);
-
-      controller.dispose();
     });
 
     test('is no-op after dispose', () {
@@ -140,6 +149,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.dispose();
       controller.searchImmediate('test');
@@ -158,6 +170,9 @@ void main() {
         debounceDelay: Duration.zero,
         cacheResults: false,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -180,8 +195,6 @@ void main() {
 
       expect(controller.error, isNull);
       expect(controller.items, ['success']);
-
-      controller.dispose();
     });
 
     test('works after successful search too', () async {
@@ -190,6 +203,9 @@ void main() {
         debounceDelay: Duration.zero,
         cacheResults: false,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -210,14 +226,15 @@ void main() {
       await Future.microtask(() {});
 
       expect(controller.items, ['result-2']);
-
-      controller.dispose();
     });
 
     test('is no-op after dispose', () async {
       final controller = SmartSearchController<String>(
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.dispose();
       await controller.retry();
@@ -236,6 +253,9 @@ void main() {
         debounceDelay: Duration.zero,
         cacheResults: true,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -257,8 +277,6 @@ void main() {
       // Should have called loader again (cache cleared)
       expect(callCount, 2);
       expect(controller.items, ['result-2']);
-
-      controller.dispose();
     });
 
     test('resets hasMorePages', () async {
@@ -266,6 +284,9 @@ void main() {
         debounceDelay: Duration.zero,
         pageSize: 5,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -288,14 +309,15 @@ void main() {
       // After refresh, hasMorePages should be re-evaluated based on new results
       // Since only-one < pageSize(5), it should be false
       expect(controller.hasMorePages, false);
-
-      controller.dispose();
     });
 
     test('is no-op after dispose', () async {
       final controller = SmartSearchController<String>(
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.dispose();
       await controller.refresh();
@@ -313,6 +335,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
       controller.searchImmediate('a');
@@ -322,8 +347,6 @@ void main() {
 
       expect(controller.selectedItems, {'Apple', 'Banana'});
       expect(controller.isSelected('Cherry'), false);
-
-      controller.dispose();
     });
 
     test('deselectAll when empty is no-op (does not notify)', () {
@@ -331,6 +354,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
 
@@ -339,8 +365,6 @@ void main() {
 
       controller.deselectAll();
       expect(notifyCount, 0, reason: 'Empty deselectAll should not notify');
-
-      controller.dispose();
     });
 
     test('selectAll after dispose is no-op', () {
@@ -348,6 +372,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
       controller.dispose();
@@ -361,6 +388,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
       controller.selectAll();
@@ -368,8 +398,6 @@ void main() {
 
       controller.deselectAll();
       expect(controller.selectedItems, isEmpty);
-
-      controller.dispose();
     });
   });
 
@@ -383,14 +411,15 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry', 'Avocado']);
       controller.select('Cherry');
       controller.selectWhere((item) => item.startsWith('A'));
 
       expect(controller.selectedItems, {'Cherry', 'Apple', 'Avocado'});
-
-      controller.dispose();
     });
 
     test('deselectWhere removes only matching items', () {
@@ -398,14 +427,15 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
       controller.selectAll();
       controller.deselectWhere((item) => item.startsWith('B'));
 
       expect(controller.selectedItems, {'Apple', 'Cherry'});
-
-      controller.dispose();
     });
   });
 
@@ -419,6 +449,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       controller.setFilter('long', (item) => item.length > 5);
@@ -429,8 +462,6 @@ void main() {
       // Replace items — filter should still apply
       controller.setItems(['Cherry', 'Date', 'Elderberry']);
       expect(controller.items, ['Cherry', 'Elderberry']);
-
-      controller.dispose();
     });
 
     test('empty list clears everything', () {
@@ -438,6 +469,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       expect(controller.items.length, 2);
@@ -445,8 +479,6 @@ void main() {
       controller.setItems([]);
       expect(controller.items, isEmpty);
       expect(controller.allItems, isEmpty);
-
-      controller.dispose();
     });
 
     test('is no-op after dispose', () {
@@ -454,6 +486,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.dispose();
       controller.setItems(['Apple']);
@@ -465,6 +500,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Banana', 'Apple', 'Cherry']);
       controller.setSortBy((a, b) => a.compareTo(b));
@@ -474,8 +512,6 @@ void main() {
       // New items should also be sorted
       controller.setItems(['Zebra', 'Mango', 'Date']);
       expect(controller.items, ['Date', 'Mango', 'Zebra']);
-
-      controller.dispose();
     });
   });
 
@@ -490,6 +526,9 @@ void main() {
         debounceDelay: Duration.zero,
         cacheResults: false,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -518,8 +557,6 @@ void main() {
       expect(controller.error, isNull);
       expect(controller.items, ['recovered-data']);
       expect(controller.isLoading, false);
-
-      controller.dispose();
     });
   });
 
@@ -533,6 +570,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
 
@@ -549,6 +589,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
 
@@ -564,8 +607,6 @@ void main() {
         1,
         reason: 'Re-selecting same item should not notify',
       );
-
-      controller.dispose();
     });
 
     test('deselect unselected item does not notify', () {
@@ -573,6 +614,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
 
@@ -581,8 +625,6 @@ void main() {
 
       controller.deselect('Apple');
       expect(notifyCount, 0);
-
-      controller.dispose();
     });
 
     test('toggleSelection flips state', () {
@@ -590,6 +632,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
 
@@ -598,8 +643,6 @@ void main() {
 
       controller.toggleSelection('Apple');
       expect(controller.isSelected('Apple'), false);
-
-      controller.dispose();
     });
   });
 
@@ -613,6 +656,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
 
@@ -622,8 +668,6 @@ void main() {
       // Replace with different predicate
       controller.setFilter('starts', (item) => item.startsWith('B'));
       expect(controller.items, ['Banana']);
-
-      controller.dispose();
     });
 
     test('removeFilter restores items', () {
@@ -631,6 +675,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
       controller.setFilter('short', (item) => item.length <= 5);
@@ -638,8 +685,6 @@ void main() {
 
       controller.removeFilter('short');
       expect(controller.items.length, 3);
-
-      controller.dispose();
     });
 
     test('clearFilters removes all filters', () {
@@ -647,6 +692,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
       controller.setFilter('a', (item) => item.startsWith('A'));
@@ -655,8 +703,6 @@ void main() {
 
       controller.clearFilters();
       expect(controller.items.length, 3);
-
-      controller.dispose();
     });
 
     test('removeFilter for non-existent key is safe', () {
@@ -664,12 +710,13 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
       controller.removeFilter('nonexistent');
       expect(controller.items, ['Apple']);
-
-      controller.dispose();
     });
   });
 
@@ -684,6 +731,9 @@ void main() {
         debounceDelay: Duration.zero,
         cacheResults: true,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -705,8 +755,6 @@ void main() {
       await Future.microtask(() {});
 
       expect(loaderCalls, 2, reason: 'Cache should be cleared on sort change');
-
-      controller.dispose();
     });
 
     test('passing null removes sort', () {
@@ -714,6 +762,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Banana', 'Apple', 'Cherry']);
       controller.setSortBy((a, b) => a.compareTo(b));
@@ -722,8 +773,6 @@ void main() {
       controller.setSortBy(null);
       // Should revert to original insertion order
       expect(controller.items, ['Banana', 'Apple', 'Cherry']);
-
-      controller.dispose();
     });
   });
 
@@ -737,6 +786,9 @@ void main() {
         debounceDelay: Duration.zero,
         pageSize: 2,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -756,8 +808,6 @@ void main() {
       await Future.microtask(() {});
 
       expect(controller.items, ['p0a', 'p0b', 'p1a', 'p1b']);
-
-      controller.dispose();
     });
 
     test('no-op when no async loader', () async {
@@ -765,12 +815,13 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
       await controller.loadMore();
       expect(controller.items, ['Apple']);
-
-      controller.dispose();
     });
 
     test('no-op when already loading more', () async {
@@ -779,6 +830,9 @@ void main() {
         debounceDelay: Duration.zero,
         pageSize: 2,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       var callCount = 0;
       controller.setAsyncLoader((
@@ -808,8 +862,6 @@ void main() {
 
       completer.complete(['c', 'd']);
       await Future.microtask(() {});
-
-      controller.dispose();
     });
 
     test('sets hasMorePages=false when results < pageSize', () async {
@@ -817,6 +869,9 @@ void main() {
         debounceDelay: Duration.zero,
         pageSize: 5,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -838,8 +893,6 @@ void main() {
 
       expect(controller.hasMorePages, false);
       expect(controller.items.length, 6);
-
-      controller.dispose();
     });
 
     test('sets hasMorePages=false when page returns empty', () async {
@@ -847,6 +900,9 @@ void main() {
         debounceDelay: Duration.zero,
         pageSize: 2,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -866,8 +922,6 @@ void main() {
 
       expect(controller.hasMorePages, false);
       expect(controller.items, ['a', 'b']);
-
-      controller.dispose();
     });
   });
 
@@ -881,6 +935,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Apricot', 'Banana', 'Blueberry']);
 
@@ -889,8 +946,6 @@ void main() {
 
       controller.setFilter('short', (item) => item.length <= 6);
       expect(controller.items, ['Apple', 'Banana']);
-
-      controller.dispose();
     });
 
     test('search + setSortBy: results are sorted', () {
@@ -898,6 +953,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Cherry', 'Apple', 'Coconut', 'Banana']);
 
@@ -905,8 +963,6 @@ void main() {
       controller.searchImmediate('');
 
       expect(controller.items, ['Apple', 'Banana', 'Cherry', 'Coconut']);
-
-      controller.dispose();
     });
 
     test('search during loadMore: loadMore is superseded', () async {
@@ -916,6 +972,9 @@ void main() {
         pageSize: 2,
         cacheResults: false,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -945,8 +1004,6 @@ void main() {
 
       // Items should be from the new search, not loadMore
       expect(controller.items, ['a', 'b']);
-
-      controller.dispose();
     });
   });
 
@@ -960,12 +1017,13 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
 
       expect(() => controller.items.add('Hack'), throwsUnsupportedError);
-
-      controller.dispose();
     });
 
     test('allItems getter returns unmodifiable list', () {
@@ -973,12 +1031,13 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
 
       expect(() => controller.allItems.add('Hack'), throwsUnsupportedError);
-
-      controller.dispose();
     });
 
     test('selectedItems getter returns unmodifiable set', () {
@@ -986,6 +1045,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
       controller.select('Apple');
@@ -994,8 +1056,6 @@ void main() {
         () => controller.selectedItems.add('Hack'),
         throwsUnsupportedError,
       );
-
-      controller.dispose();
     });
 
     test('activeFilters getter returns unmodifiable map', () {
@@ -1003,6 +1063,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple']);
       controller.setFilter('test', (_) => true);
@@ -1011,8 +1074,6 @@ void main() {
         () => controller.activeFilters['hack'] = (_) => false,
         throwsUnsupportedError,
       );
-
-      controller.dispose();
     });
   });
 
@@ -1026,6 +1087,9 @@ void main() {
       final controller = SmartSearchController<String>(
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -1038,14 +1102,15 @@ void main() {
 
       await Future.microtask(() {});
       expect(called, false, reason: 'setAsyncLoader should not auto-search');
-
-      controller.dispose();
     });
 
     test('is no-op after dispose', () {
       final controller = SmartSearchController<String>(
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.dispose();
       controller.setAsyncLoader(

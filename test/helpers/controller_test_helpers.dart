@@ -46,6 +46,244 @@ class AsyncTestState {
   int returnMode = 0;
 }
 
+// =============================================================================
+// Shared dispatch functions for property-based and stress tests
+// =============================================================================
+
+/// Number of distinct offline operations.
+const offlineOpCount = 18;
+
+/// Number of distinct async operations.
+const asyncOpCount = 14;
+
+/// Dispatches one random offline operation on [controller].
+///
+/// [operation] must be in [0, offlineOpCount).
+void dispatchOfflineOp(
+  SmartSearchController<String> controller,
+  Random rng,
+  int operation,
+  int seed,
+  int trial,
+  int op,
+) {
+  String tag(String detail) => 'trial=$trial seed=$seed op=$op: $detail';
+
+  switch (operation) {
+    case 0: // setItems
+      final useUnicode = rng.nextInt(3) == 0;
+      final newItems = useUnicode
+          ? List.generate(rng.nextInt(30), (i) => 'Ítém$i')
+          : List.generate(rng.nextInt(30), (i) => 'New$i');
+      controller.setItems(newItems);
+    case 1: // searchImmediate
+      final queries = [
+        '',
+        'Item',
+        'New',
+        'X',
+        'a',
+        'Item1',
+        'ew0',
+        ' ',
+        'Ítém',
+        'Ünïcödé',
+        'a' * 200,
+      ];
+      controller.searchImmediate(queries[rng.nextInt(queries.length)]);
+    case 2: // clearSearch
+      controller.clearSearch();
+      expect(controller.searchQuery, '', reason: tag('clearSearch → empty'));
+    case 3: // setFilter
+      final filters = [
+        ('even', (String s) => s.hashCode.isEven),
+        ('short', (String s) => s.length <= 5),
+        ('has1', (String s) => s.contains('1')),
+      ];
+      final f = filters[rng.nextInt(filters.length)];
+      controller.setFilter(f.$1, f.$2);
+    case 4: // removeFilter
+      const keys = ['even', 'short', 'has1'];
+      controller.removeFilter(keys[rng.nextInt(keys.length)]);
+    case 5: // clearFilters
+      controller.clearFilters();
+      expect(
+        controller.activeFilters.isEmpty,
+        true,
+        reason: tag('clearFilters → empty'),
+      );
+    case 6: // setSortBy
+      if (rng.nextBool()) {
+        controller.setSortBy((a, b) => a.compareTo(b));
+      } else {
+        controller.setSortBy(null);
+      }
+    case 7: // selectAll
+      controller.selectAll();
+      for (final item in controller.items) {
+        expect(
+          controller.selectedItems.contains(item),
+          true,
+          reason: tag('selectAll → $item selected'),
+        );
+      }
+    case 8: // deselectAll
+      controller.deselectAll();
+      expect(
+        controller.selectedItems.isEmpty,
+        true,
+        reason: tag('deselectAll → empty'),
+      );
+    case 9: // select
+      if (controller.items.isNotEmpty) {
+        controller.select(
+          controller.items[rng.nextInt(controller.items.length)],
+        );
+      }
+    case 10: // deselect
+      if (controller.items.isNotEmpty) {
+        controller.deselect(
+          controller.items[rng.nextInt(controller.items.length)],
+        );
+      }
+    case 11: // toggleSelection
+      if (controller.items.isNotEmpty) {
+        controller.toggleSelection(
+          controller.items[rng.nextInt(controller.items.length)],
+        );
+      }
+    case 12: // selectWhere
+      controller.selectWhere((s) => s.length > 4);
+    case 13: // deselectWhere
+      controller.deselectWhere((s) => s.contains('0'));
+    case 14: // updateCaseSensitive
+      final v = rng.nextBool();
+      controller.updateCaseSensitive(v);
+      expect(controller.caseSensitive, v, reason: tag('caseSensitive == $v'));
+    case 15: // updateFuzzySearchEnabled
+      final v = rng.nextBool();
+      controller.updateFuzzySearchEnabled(v);
+      expect(
+        controller.fuzzySearchEnabled,
+        v,
+        reason: tag('fuzzySearchEnabled == $v'),
+      );
+    case 16: // updateFuzzyThreshold
+      final v = rng.nextDouble();
+      controller.updateFuzzyThreshold(v);
+      expect(controller.fuzzyThreshold, v, reason: tag('fuzzyThreshold == $v'));
+    case 17: // updateMinSearchLength
+      final v = rng.nextInt(4);
+      controller.updateMinSearchLength(v);
+      expect(
+        controller.minSearchLength,
+        v,
+        reason: tag('minSearchLength == $v'),
+      );
+  }
+}
+
+/// Dispatches one random async operation on [controller].
+///
+/// [operation] must be in [0, asyncOpCount). Includes selection ops (10-13)
+/// that the original property-based tests were missing.
+Future<void> dispatchAsyncOp(
+  SmartSearchController<String> controller,
+  AsyncTestState state,
+  Future<List<String>> Function(String query, {int page, int pageSize}) loader,
+  Random rng,
+  int operation,
+  int seed,
+  int trial,
+  int op,
+) async {
+  String tag(String detail) => 'trial=$trial seed=$seed op=$op: $detail';
+
+  switch (operation) {
+    case 0: // searchImmediate
+      controller.searchImmediate('q${rng.nextInt(5)}');
+      await Future.microtask(() {});
+      await Future.microtask(() {});
+    case 1: // clearSearch
+      state.shouldFail = false;
+      controller.clearSearch();
+      await Future.microtask(() {});
+      await Future.microtask(() {});
+      expect(controller.searchQuery, '', reason: tag('clearSearch → empty'));
+    case 2: // loadMore
+      await controller.loadMore();
+      await Future.microtask(() {});
+    case 3: // refresh
+      await controller.refresh();
+      await Future.microtask(() {});
+    case 4: // retry
+      state.shouldFail = false;
+      final queryBefore = controller.searchQuery;
+      await controller.retry();
+      await Future.microtask(() {});
+      expect(
+        controller.searchQuery,
+        queryBefore,
+        reason: tag('retry preserves searchQuery'),
+      );
+    case 5: // setFilter
+      final filters = [
+        ('even', (String s) => s.hashCode.isEven),
+        ('short', (String s) => s.length <= 8),
+      ];
+      final f = filters[rng.nextInt(filters.length)];
+      controller.setFilter(f.$1, f.$2);
+      await Future.microtask(() {});
+      await Future.microtask(() {});
+    case 6: // removeFilter
+      const keys = ['even', 'short'];
+      controller.removeFilter(keys[rng.nextInt(keys.length)]);
+      await Future.microtask(() {});
+      await Future.microtask(() {});
+    case 7: // clearFilters
+      controller.clearFilters();
+      await Future.microtask(() {});
+      await Future.microtask(() {});
+      expect(
+        controller.activeFilters.isEmpty,
+        true,
+        reason: tag('clearFilters → empty'),
+      );
+    case 8: // setSortBy
+      if (rng.nextBool()) {
+        controller.setSortBy((a, b) => a.compareTo(b));
+      } else {
+        controller.setSortBy(null);
+      }
+      await Future.microtask(() {});
+      await Future.microtask(() {});
+    case 9: // setAsyncLoader swap
+      final queryBefore = controller.searchQuery;
+      controller.setAsyncLoader(loader);
+      expect(
+        controller.searchQuery,
+        queryBefore,
+        reason: tag('setAsyncLoader preserves query'),
+      );
+    case 10: // selectAll
+      controller.selectAll();
+    case 11: // deselectAll
+      controller.deselectAll();
+    case 12: // select random item
+      if (controller.items.isNotEmpty) {
+        controller.select(
+          controller.items[rng.nextInt(controller.items.length)],
+        );
+      }
+    case 13: // deselect random item
+      if (controller.items.isNotEmpty) {
+        controller.deselect(
+          controller.items[rng.nextInt(controller.items.length)],
+        );
+      }
+  }
+}
+
 /// Checks invariants that must always hold for offline controllers.
 void checkOfflineInvariants(
   SmartSearchController<String> controller,

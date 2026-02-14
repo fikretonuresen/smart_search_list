@@ -1,3 +1,30 @@
+## 0.8.0 - 2026-02-14
+
+GridView support: search, filter, sort, pagination, grouping, and multi-select in grid layouts.
+
+### New Features
+- **SmartSearchGrid**: Searchable grid widget with three constructors — `SmartSearchGrid()` (offline), `.async()` (server-driven), `.controller()` (external controller)
+- **SliverSmartSearchGrid**: Sliver variant for `CustomScrollView` integration, with sticky group headers
+- **GridConfiguration**: Layout configuration class for grid delegate, padding, physics, and scroll behavior
+- **Grouped grids**: Section headers with `SliverToBoxAdapter` (box) or `SliverPersistentHeader` (sliver, sticky) per group
+- **Shared base**: `SmartSearchWidgetBase` and `SmartSearchStateMixin` eliminate duplicated lifecycle code across all 4 widgets (internal, not exported)
+
+### Breaking Changes
+- **`onRefresh` removed from `SliverSmartSearchList`**: Sliver widgets cannot contain a `RefreshIndicator`. Wrap your `CustomScrollView` with `RefreshIndicator` and call `controller.refresh()` directly instead
+- **`onSearchChanged` on `SliverSmartSearchList` is no longer silently ignored**: Previously the parameter was accepted but the callback was never called. It now fires post-debounce when the controller's query value changes. If you passed a callback that assumed it would not be invoked, remove it or update it
+
+### Improvements
+- **Grid examples**: 5 new demos (grid, async grid, grouped grid, sliver grid, controller grid) — 19 total
+- **Search highlighting in grid**: `SearchHighlightText` demonstrated in grid example
+
+### Tests
+- 499 tests (up from 312), including grid widget tests, grid controller swap tests, and `addTearDown` adoption for test isolation
+
+### Backward Compatibility
+- All existing `SmartSearchList` and `SliverSmartSearchList` code compiles without changes, except for the two breaking changes noted above
+
+---
+
 ## 0.7.5 - 2026-02-13
 
 Fix 3 widget lifecycle bugs and 1 cache crash, add 89 edge case and property-based tests (312 total).

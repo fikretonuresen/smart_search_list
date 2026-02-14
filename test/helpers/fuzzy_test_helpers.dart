@@ -8,6 +8,22 @@ String randomText(Random rng, int minLen, int maxLen) {
   );
 }
 
+/// Generates a random string from a mix of character sets:
+/// 60% printable ASCII, 20% Latin extended (U+00C0-U+00FF), 20% Cyrillic (U+0410-U+044F).
+String randomMixedText(Random rng, int minLen, int maxLen) {
+  final length = minLen + rng.nextInt(maxLen - minLen + 1);
+  return String.fromCharCodes(
+    List.generate(length, (_) {
+      final pool = rng.nextInt(5);
+      return switch (pool) {
+        0 || 1 || 2 => 0x20 + rng.nextInt(0x7E - 0x20 + 1), // ASCII
+        3 => 0xC0 + rng.nextInt(0xFF - 0xC0 + 1), // Latin extended (À-ÿ)
+        _ => 0x0410 + rng.nextInt(0x044F - 0x0410 + 1), // Cyrillic (А-я)
+      };
+    }),
+  );
+}
+
 /// Returns a random contiguous substring of [text] with length >= 1.
 String randomSubstring(Random rng, String text) {
   final start = rng.nextInt(text.length);
@@ -44,14 +60,24 @@ String applyEdits(Random rng, String text, int edits) {
     final pos = rng.nextInt(result.length);
     switch (editType) {
       case 0: // insertion
-        final ch = String.fromCharCode(0x61 + rng.nextInt(26));
+        final ch = _mutationChar(rng);
         result = result.substring(0, pos) + ch + result.substring(pos);
       case 1: // deletion
         result = result.substring(0, pos) + result.substring(pos + 1);
       case 2: // substitution
-        final ch = String.fromCharCode(0x61 + rng.nextInt(26));
+        final ch = _mutationChar(rng);
         result = result.substring(0, pos) + ch + result.substring(pos + 1);
     }
   }
   return result;
+}
+
+/// Returns a random mutation character from a broader set than just a-z.
+String _mutationChar(Random rng) {
+  final pool = rng.nextInt(3);
+  return String.fromCharCode(switch (pool) {
+    0 => 0x61 + rng.nextInt(26), // a-z
+    1 => 0x41 + rng.nextInt(26), // A-Z
+    _ => 0xC0 + rng.nextInt(64), // Latin extended (À-ÿ)
+  });
 }

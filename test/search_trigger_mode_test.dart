@@ -8,6 +8,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
       controller.setItems(['Apple', 'Banana', 'Cherry']);
 
       // In onEdit mode (default), calling search triggers debounced search
@@ -16,8 +19,6 @@ void main() {
 
       expect(controller.searchQuery, 'App');
       expect(controller.hasSearched, true);
-
-      controller.dispose();
     });
 
     test('searchImmediate bypasses debounce', () {
@@ -25,6 +26,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 5000), // long debounce
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
       controller.setItems(['Apple', 'Banana', 'Cherry']);
 
       // searchImmediate should apply immediately without waiting for debounce
@@ -34,8 +38,6 @@ void main() {
       expect(controller.hasSearched, true);
       expect(controller.items.length, 1);
       expect(controller.items.first, 'Banana');
-
-      controller.dispose();
     });
 
     test('SearchConfiguration.triggerMode defaults to onEdit', () {

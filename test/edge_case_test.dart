@@ -38,6 +38,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
       controller.setItems(['Apple', 'Banana']);
 
       await tester.pumpWidget(
@@ -62,8 +65,6 @@ void main() {
 
       expect(find.text('NO RESULTS: zzz'), findsOneWidget);
       expect(find.text('NO DATA'), findsNothing);
-
-      controller.dispose();
     });
 
     testWidgets('shows empty state when filter removes all items', (
@@ -73,6 +74,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
       controller.setItems(['Apple', 'Banana']);
 
       await tester.pumpWidget(
@@ -100,8 +104,6 @@ void main() {
       // (hasSearched is true from setFilter calling _performSearch, but
       // searchQuery is empty)
       expect(find.text('NO DATA'), findsOneWidget);
-
-      controller.dispose();
     });
   });
 
@@ -115,6 +117,9 @@ void main() {
         debounceDelay: Duration.zero,
         cacheResults: true,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       var callCount = 0;
       controller.setAsyncLoader((
@@ -143,8 +148,6 @@ void main() {
       await Future.microtask(() {});
       await Future.microtask(() {});
       expect(callCount, 3, reason: 'Filter removal → new cache key');
-
-      controller.dispose();
     });
 
     test('filter name containing separator does not cause collision', () async {
@@ -152,6 +155,9 @@ void main() {
         debounceDelay: Duration.zero,
         cacheResults: true,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       var callCount = 0;
       controller.setAsyncLoader((
@@ -183,8 +189,6 @@ void main() {
         greaterThan(firstCallCount),
         reason: 'Different filter config should produce different cache key',
       );
-
-      controller.dispose();
     });
   });
 
@@ -321,14 +325,15 @@ void main() {
         searchableFields: (item) => [],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
       controller.searchImmediate('App');
 
       // No searchable fields → nothing matches → empty results
       expect(controller.items, isEmpty);
-
-      controller.dispose();
     });
 
     test('empty string search still shows all items', () {
@@ -336,14 +341,15 @@ void main() {
         searchableFields: (item) => [],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       controller.searchImmediate('');
 
       // Empty query doesn't search, just shows all
       expect(controller.items.length, 2);
-
-      controller.dispose();
     });
   });
 
@@ -357,6 +363,9 @@ void main() {
         debounceDelay: Duration.zero,
         pageSize: 1,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -377,8 +386,6 @@ void main() {
       await controller.loadMore();
       await Future.microtask(() {});
       expect(controller.items, ['item-0', 'item-1']);
-
-      controller.dispose();
     });
 
     test('fuzzyThreshold=0.0 accepts every fuzzy match', () {
@@ -388,14 +395,15 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.0,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry', 'Apricot']);
       controller.searchImmediate('a');
 
       // Threshold 0 should accept very loose matches
       expect(controller.items.length, greaterThanOrEqualTo(1));
-
-      controller.dispose();
     });
 
     test('fuzzyThreshold=1.0 only accepts exact substring matches', () {
@@ -405,6 +413,9 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 1.0,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'apple', 'APPLE', 'Banana']);
       controller.searchImmediate('apple');
@@ -412,8 +423,6 @@ void main() {
       // Only exact substring matches should pass threshold of 1.0
       // Case-insensitive by default, so Apple, apple, APPLE should match
       expect(controller.items.length, 3);
-
-      controller.dispose();
     });
 
     test('maxCacheSize=1 evicts on second distinct search', () async {
@@ -423,6 +432,9 @@ void main() {
         cacheResults: true,
         maxCacheSize: 1,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -454,8 +466,6 @@ void main() {
       await Future.microtask(() {});
       await Future.microtask(() {});
       expect(callCount, 4, reason: 'Cache should have evicted "b"');
-
-      controller.dispose();
     });
 
     test('debounceDelay=Duration.zero works correctly', () {
@@ -463,13 +473,14 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       controller.searchImmediate('App');
 
       expect(controller.items, ['Apple']);
-
-      controller.dispose();
     });
   });
 
@@ -513,6 +524,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
       controller.setItems(['Apple', 'Banana']);
 
       await tester.pumpWidget(
@@ -542,8 +556,6 @@ void main() {
 
       expect(find.text('NO RESULTS: zzz'), findsOneWidget);
       expect(find.text('NO DATA'), findsNothing);
-
-      controller.dispose();
     });
   });
 
@@ -558,6 +570,9 @@ void main() {
         debounceDelay: Duration.zero,
         caseSensitive: false,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'apple', 'APPLE']);
       controller.searchImmediate('apple');
@@ -566,8 +581,6 @@ void main() {
 
       controller.updateCaseSensitive(true);
       expect(controller.items, ['apple']);
-
-      controller.dispose();
     });
 
     test('updateMinSearchLength re-evaluates current query', () {
@@ -576,6 +589,9 @@ void main() {
         debounceDelay: Duration.zero,
         minSearchLength: 0,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana']);
       controller.searchImmediate('Ap');
@@ -588,8 +604,6 @@ void main() {
       // Query 'Ap' should no longer produce filtered results
       // (minSearchLength check happens in _performSearch)
       expect(controller.items, ['Apple']); // stays as-is, search was no-op
-
-      controller.dispose();
     });
 
     test('updateFuzzySearchEnabled toggles fuzzy mode', () {
@@ -598,6 +612,9 @@ void main() {
         debounceDelay: Duration.zero,
         fuzzySearchEnabled: false,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Application', 'Banana']);
       controller.searchImmediate('apln');
@@ -610,8 +627,6 @@ void main() {
 
       // 'apln' should fuzzy-match against 'Application' (a-p-l-n subsequence)
       expect(controller.items.isNotEmpty, true);
-
-      controller.dispose();
     });
 
     test('updateFuzzyThreshold adjusts strictness', () {
@@ -621,6 +636,9 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.0,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Xylophone', 'Banana']);
       controller.searchImmediate('apl');
@@ -632,8 +650,6 @@ void main() {
 
       // Should have fewer or equal matches
       expect(controller.items.length, lessThanOrEqualTo(loosyCount));
-
-      controller.dispose();
     });
   });
 
@@ -647,6 +663,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.dispose();
 
@@ -679,6 +698,9 @@ void main() {
       final controller = SmartSearchController<String>(
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.dispose();
 

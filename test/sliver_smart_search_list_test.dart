@@ -72,6 +72,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(const ['Apple', 'Banana', 'Cherry']);
 
@@ -107,8 +110,6 @@ void main() {
       expect(find.text('Apple'), findsOneWidget);
       expect(find.text('Banana'), findsNothing);
       expect(find.text('Cherry'), findsNothing);
-
-      controller.dispose();
     });
 
     testWidgets('filters items with searchImmediate', (tester) async {
@@ -116,6 +117,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 300),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(const ['Apple', 'Banana', 'Cherry']);
 
@@ -145,8 +149,6 @@ void main() {
       expect(find.text('Apple'), findsNothing);
       expect(find.text('Banana'), findsOneWidget);
       expect(find.text('Cherry'), findsNothing);
-
-      controller.dispose();
     });
 
     testWidgets('clears search and shows all items again', (tester) async {
@@ -154,6 +156,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(const ['Apple', 'Banana', 'Cherry']);
 
@@ -188,8 +193,6 @@ void main() {
       expect(find.text('Apple'), findsOneWidget);
       expect(find.text('Banana'), findsOneWidget);
       expect(find.text('Cherry'), findsOneWidget);
-
-      controller.dispose();
     });
 
     // -----------------------------------------------------------------------
@@ -201,6 +204,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       List<String> capturedTerms = [];
 
@@ -234,8 +240,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(capturedTerms, ['Apple']);
-
-      controller.dispose();
     });
 
     testWidgets('splits multi-word search query into separate terms', (
@@ -245,6 +249,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       List<String> capturedTerms = [];
 
@@ -276,8 +283,6 @@ void main() {
 
       // The _searchTerms getter splits by spaces
       expect(capturedTerms, ['red', 'apple']);
-
-      controller.dispose();
     });
 
     testWidgets(
@@ -287,6 +292,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: const Duration(milliseconds: 10),
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         List<String> capturedTerms = ['placeholder'];
 
@@ -334,6 +342,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: const Duration(milliseconds: 10),
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         final termsPerItem = <String, List<String>>{};
 
@@ -440,6 +451,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(const ['Apple', 'Banana', 'Cherry']);
 
@@ -470,8 +484,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No results for "zzzzz"'), findsOneWidget);
-
-      controller.dispose();
     });
 
     testWidgets('shows default empty search widget when no custom builder', (
@@ -481,6 +493,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(const ['Apple', 'Banana']);
 
@@ -509,8 +524,6 @@ void main() {
       // DefaultEmptySearchWidget shows "No results found"
       expect(find.text('No results found'), findsOneWidget);
       expect(find.textContaining('zzzzz'), findsOneWidget);
-
-      controller.dispose();
     });
 
     // -----------------------------------------------------------------------
@@ -623,6 +636,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(const ['Apple', 'Avocado', 'Banana', 'Blueberry']);
 
@@ -662,8 +678,6 @@ void main() {
       // Only the A group should remain with 1 item
       expect(find.text('A (1)'), findsOneWidget);
       expect(find.text('B (2)'), findsNothing);
-
-      controller.dispose();
     });
 
     testWidgets('search terms are passed in grouped mode', (tester) async {
@@ -671,6 +685,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       List<String> capturedTerms = [];
 
@@ -702,8 +719,6 @@ void main() {
 
       // Search terms should be passed even in grouped mode
       expect(capturedTerms, ['A']);
-
-      controller.dispose();
     });
 
     // -----------------------------------------------------------------------
@@ -993,6 +1008,9 @@ void main() {
       final controller = SmartSearchController<String>(
         searchableFields: (item) => [item],
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(const ['Apple', 'Banana']);
 
@@ -1025,8 +1043,6 @@ void main() {
       // Should still work
       controller.setItems(['Test']);
       expect(controller.items.length, 1);
-
-      controller.dispose();
     });
 
     // -----------------------------------------------------------------------
@@ -1242,6 +1258,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(const ['Apple', 'Banana', 'Apricot', 'Cherry']);
 
@@ -1276,8 +1295,6 @@ void main() {
       expect(find.text('Apricot'), findsOneWidget);
       expect(find.text('Banana'), findsNothing);
       expect(find.text('Cherry'), findsNothing);
-
-      controller.dispose();
     });
 
     testWidgets('sort applied via controller reorders items', (tester) async {
@@ -1285,6 +1302,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       final displayedOrder = <String>[];
 
@@ -1319,8 +1339,255 @@ void main() {
 
       // Items should be in alphabetical order
       expect(displayedOrder, ['Apple', 'Banana', 'Cherry']);
+    });
 
-      controller.dispose();
+    // -----------------------------------------------------------------------
+    // onSearchChanged callback
+    // -----------------------------------------------------------------------
+
+    group('onSearchChanged callback', () {
+      testWidgets('fires when controller query changes via searchImmediate', (
+        tester,
+      ) async {
+        final controller = SmartSearchController<String>(
+          searchableFields: (item) => [item],
+          debounceDelay: const Duration(milliseconds: 10),
+        );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
+
+        controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
+        final queries = <String>[];
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CustomScrollView(
+                slivers: [
+                  SliverSmartSearchList<String>.controller(
+                    controller: controller,
+                    onSearchChanged: (query) => queries.add(query),
+                    itemBuilder:
+                        (context, item, index, {searchTerms = const []}) {
+                          return ListTile(title: Text(item));
+                        },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        controller.searchImmediate('App');
+        await tester.pumpAndSettle();
+
+        expect(queries, ['App']);
+      });
+
+      testWidgets('fires with empty string on clearSearch', (tester) async {
+        final controller = SmartSearchController<String>(
+          searchableFields: (item) => [item],
+          debounceDelay: const Duration(milliseconds: 10),
+        );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
+
+        controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
+        final queries = <String>[];
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CustomScrollView(
+                slivers: [
+                  SliverSmartSearchList<String>.controller(
+                    controller: controller,
+                    onSearchChanged: (query) => queries.add(query),
+                    itemBuilder:
+                        (context, item, index, {searchTerms = const []}) {
+                          return ListTile(title: Text(item));
+                        },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        controller.searchImmediate('App');
+        await tester.pumpAndSettle();
+
+        controller.clearSearch();
+        await tester.pumpAndSettle();
+
+        expect(queries, ['App', '']);
+      });
+
+      testWidgets('does NOT fire on non-query changes (filter, sort)', (
+        tester,
+      ) async {
+        final controller = SmartSearchController<String>(
+          searchableFields: (item) => [item],
+          debounceDelay: const Duration(milliseconds: 10),
+        );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
+
+        controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
+        final queries = <String>[];
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CustomScrollView(
+                slivers: [
+                  SliverSmartSearchList<String>.controller(
+                    controller: controller,
+                    onSearchChanged: (query) => queries.add(query),
+                    itemBuilder:
+                        (context, item, index, {searchTerms = const []}) {
+                          return ListTile(title: Text(item));
+                        },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Apply filter — should NOT fire onSearchChanged
+        controller.setFilter('startsA', (item) => item.startsWith('A'));
+        await tester.pumpAndSettle();
+
+        // Apply sort — should NOT fire onSearchChanged
+        controller.setSortBy((a, b) => a.compareTo(b));
+        await tester.pumpAndSettle();
+
+        // Toggle selection — should NOT fire onSearchChanged
+        controller.toggleSelection('Apple');
+        await tester.pumpAndSettle();
+
+        expect(queries, isEmpty);
+      });
+
+      testWidgets('fires correctly after controller swap in didUpdateWidget', (
+        tester,
+      ) async {
+        final controllerA = SmartSearchController<String>(
+          searchableFields: (item) => [item],
+          debounceDelay: const Duration(milliseconds: 10),
+        );
+        final controllerB = SmartSearchController<String>(
+          searchableFields: (item) => [item],
+          debounceDelay: const Duration(milliseconds: 10),
+        );
+        addTearDown(() {
+          if (!controllerA.isDisposed) controllerA.dispose();
+          if (!controllerB.isDisposed) controllerB.dispose();
+        });
+
+        controllerA.setItems(const ['Apple', 'Banana']);
+        controllerB.setItems(const ['Cherry', 'Date']);
+
+        final queries = <String>[];
+        late StateSetter rebuildParent;
+        SmartSearchController<String> activeController = controllerA;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: StatefulBuilder(
+                builder: (context, setState) {
+                  rebuildParent = setState;
+                  return CustomScrollView(
+                    slivers: [
+                      SliverSmartSearchList<String>.controller(
+                        controller: activeController,
+                        onSearchChanged: (query) => queries.add(query),
+                        itemBuilder:
+                            (context, item, index, {searchTerms = const []}) {
+                              return ListTile(title: Text(item));
+                            },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Search on controller A
+        controllerA.searchImmediate('App');
+        await tester.pumpAndSettle();
+        expect(queries, ['App']);
+
+        // Swap to controller B (query resets to '')
+        rebuildParent(() {
+          activeController = controllerB;
+        });
+        await tester.pumpAndSettle();
+
+        // Search on controller B should fire
+        controllerB.searchImmediate('Cher');
+        await tester.pumpAndSettle();
+        expect(queries, ['App', 'Cher']);
+      });
+
+      testWidgets('fires once per distinct query (dedup check)', (
+        tester,
+      ) async {
+        final controller = SmartSearchController<String>(
+          searchableFields: (item) => [item],
+          debounceDelay: const Duration(milliseconds: 10),
+        );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
+
+        controller.setItems(const ['Apple', 'Banana', 'Cherry']);
+
+        final queries = <String>[];
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CustomScrollView(
+                slivers: [
+                  SliverSmartSearchList<String>.controller(
+                    controller: controller,
+                    onSearchChanged: (query) => queries.add(query),
+                    itemBuilder:
+                        (context, item, index, {searchTerms = const []}) {
+                          return ListTile(title: Text(item));
+                        },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Search the same query twice — should only fire once
+        controller.searchImmediate('App');
+        await tester.pumpAndSettle();
+
+        controller.searchImmediate('App');
+        await tester.pumpAndSettle();
+
+        expect(queries, ['App']);
+      });
     });
   });
 }

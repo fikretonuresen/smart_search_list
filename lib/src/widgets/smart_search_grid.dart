@@ -2,54 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../core/smart_search_controller.dart';
 import '../models/accessibility_configuration.dart';
+import '../models/grid_configuration.dart';
 import '../models/search_configuration.dart';
 import 'default_widgets.dart';
-import 'sliver_smart_search_list.dart';
+import 'sliver_smart_search_grid.dart';
 import 'smart_search_state.dart';
 
-/// A highly customizable searchable list widget.
+/// A highly customizable searchable grid widget.
 ///
-/// Supports offline, async, and controller-driven data sources with search,
-/// filter, sort, and pagination capabilities.
+/// Displays items in a grid layout with search, filter, sort, and pagination
+/// capabilities. Parallel to [SmartSearchList] but renders items in a grid
+/// layout instead of a list.
 ///
 /// Three constructors target different use cases:
-/// - [SmartSearchList.new] — offline mode with client-side search.
-/// - [SmartSearchList.async] — async mode where the server handles search.
-/// - [SmartSearchList.controller] — fully controller-driven rendering.
+/// - [SmartSearchGrid.new] — offline mode with client-side search.
+/// - [SmartSearchGrid.async] — async mode where the server handles search.
+/// - [SmartSearchGrid.controller] — fully controller-driven rendering.
 ///
 /// This widget uses a [Column] with [Expanded] internally, so it must receive
 /// a bounded height constraint from its parent. Do not place it inside a
-/// [ListView] or [SingleChildScrollView] — use [SliverSmartSearchList] for
+/// [ListView] or [SingleChildScrollView] — use [SliverSmartSearchGrid] for
 /// [CustomScrollView] integration instead.
 ///
 /// Example (offline):
 /// ```dart
-/// SmartSearchList<String>(
-///   items: ['Apple', 'Banana', 'Cherry'],
-///   searchableFields: (item) => [item],
-///   itemBuilder: (context, item, index, {searchTerms = const []}) {
-///     return ListTile(title: Text(item));
-///   },
-/// )
-/// ```
-///
-/// Example (async):
-/// ```dart
-/// SmartSearchList<Product>.async(
-///   asyncLoader: (query, {page = 0, pageSize = 20}) async {
-///     return await api.searchProducts(query, page: page);
-///   },
+/// SmartSearchGrid<Product>(
+///   items: products,
+///   searchableFields: (p) => [p.name, p.category],
 ///   itemBuilder: (context, product, index, {searchTerms = const []}) {
 ///     return ProductCard(product: product);
 ///   },
+///   gridConfig: GridConfiguration(
+///     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+///       crossAxisCount: 2,
+///       childAspectRatio: 0.7,
+///     ),
+///   ),
 /// )
 /// ```
-class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
+class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
   /// Builder for a custom search field. If null, [DefaultSearchField] is used.
   final SearchFieldBuilder? searchFieldBuilder;
-
-  /// Builder for item separators. If null, no separators are shown.
-  final SeparatorBuilder? separatorBuilder;
 
   /// Builder for sort controls.
   final SortBuilder<T>? sortBuilder;
@@ -59,14 +52,14 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
 
   /// Builder for an inline progress indicator shown during async operations.
   ///
-  /// Rendered between the search field (and [belowSearchWidget]) and the list.
+  /// Rendered between the search field (and [belowSearchWidget]) and the grid.
   /// Receives the current loading state so you can show/hide a progress bar,
   /// shimmer, etc. Return [SizedBox.shrink] when not loading.
   final ProgressIndicatorBuilder? progressIndicatorBuilder;
 
   /// Called on pull-to-refresh.
   ///
-  /// **Not available on [SliverSmartSearchList].** For pull-to-refresh in a
+  /// **Not available on [SliverSmartSearchGrid].** For pull-to-refresh in a
   /// [CustomScrollView], wrap it with a [RefreshIndicator] and call
   /// [SmartSearchController.refresh] directly.
   final VoidCallback? onRefresh;
@@ -77,19 +70,11 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
   /// Scroll controller.
   final ScrollController? scrollController;
 
-  /// List appearance configuration (scroll physics, padding, etc.).
-  final ListConfiguration listConfig;
+  /// Grid appearance configuration (delegate, scroll physics, padding, etc.).
+  final GridConfiguration gridConfig;
 
   // Private constructor — all mode-specific fields are nullable.
-  //
-  // MAINTAINER NOTE: When adding a new parameter here, you MUST also add it
-  // to every public constructor that should expose it:
-  //   - SmartSearchList()           — offline mode (all params)
-  //   - SmartSearchList.async()     — async mode (no items, searchableFields)
-  //   - SmartSearchList.controller()— external controller (no items,
-  //       searchableFields, asyncLoader, cacheResults, maxCacheSize)
-  // Also update SliverSmartSearchList's matching constructors for parity.
-  const SmartSearchList._({
+  const SmartSearchGrid._({
     super.key,
     super.items,
     super.asyncLoader,
@@ -97,7 +82,6 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     required super.itemBuilder,
     super.controller,
     this.searchFieldBuilder,
-    this.separatorBuilder,
     super.loadingStateBuilder,
     super.errorStateBuilder,
     super.emptyStateBuilder,
@@ -106,7 +90,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     this.filterBuilder,
     this.progressIndicatorBuilder,
     super.searchConfig,
-    this.listConfig = const ListConfiguration(),
+    required this.gridConfig,
     super.paginationConfig,
     super.onItemTap,
     super.onSearchChanged,
@@ -123,21 +107,21 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     super.accessibilityConfig,
   });
 
-  /// Creates an offline searchable list with client-side search.
+  /// Creates an offline searchable grid with client-side search.
   ///
   /// Provide [items] as the data source and [searchableFields] to define which
   /// text fields are matched during search. The widget creates and manages its
   /// own [SmartSearchController] internally.
   ///
   /// To drive search, filter, and sort programmatically via an external
-  /// controller, use [SmartSearchList.controller] instead.
-  const SmartSearchList({
+  /// controller, use [SmartSearchGrid.controller] instead.
+  const SmartSearchGrid({
     Key? key,
     required List<T> items,
     required List<String> Function(T item) searchableFields,
     required ItemBuilder<T> itemBuilder,
+    required GridConfiguration gridConfig,
     SearchFieldBuilder? searchFieldBuilder,
-    SeparatorBuilder? separatorBuilder,
     LoadingStateBuilder? loadingStateBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
@@ -146,7 +130,6 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     FilterBuilder<T>? filterBuilder,
     ProgressIndicatorBuilder? progressIndicatorBuilder,
     SearchConfiguration searchConfig = const SearchConfiguration(),
-    ListConfiguration listConfig = const ListConfiguration(),
     PaginationConfiguration? paginationConfig,
     void Function(T item, int index)? onItemTap,
     void Function(String query)? onSearchChanged,
@@ -167,8 +150,8 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          items: items,
          searchableFields: searchableFields,
          itemBuilder: itemBuilder,
+         gridConfig: gridConfig,
          searchFieldBuilder: searchFieldBuilder,
-         separatorBuilder: separatorBuilder,
          loadingStateBuilder: loadingStateBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
@@ -177,7 +160,6 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          filterBuilder: filterBuilder,
          progressIndicatorBuilder: progressIndicatorBuilder,
          searchConfig: searchConfig,
-         listConfig: listConfig,
          paginationConfig: paginationConfig,
          onItemTap: onItemTap,
          onSearchChanged: onSearchChanged,
@@ -194,7 +176,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          accessibilityConfig: accessibilityConfig,
        );
 
-  /// Creates an async searchable list that loads data from a remote source.
+  /// Creates an async searchable grid that loads data from a remote source.
   ///
   /// The [asyncLoader] is called with a search query, page index (zero-based),
   /// and page size. It is called with an empty string on initial load — handle
@@ -203,16 +185,13 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
   /// Search matching is delegated to the server; [searchableFields] is not
   /// accepted. The widget creates and manages its own [SmartSearchController]
   /// internally.
-  ///
-  /// To drive search programmatically via an external controller, use
-  /// [SmartSearchList.controller] with [SmartSearchController.setAsyncLoader].
-  const SmartSearchList.async({
+  const SmartSearchGrid.async({
     Key? key,
     required Future<List<T>> Function(String query, {int page, int pageSize})
     asyncLoader,
     required ItemBuilder<T> itemBuilder,
+    required GridConfiguration gridConfig,
     SearchFieldBuilder? searchFieldBuilder,
-    SeparatorBuilder? separatorBuilder,
     LoadingStateBuilder? loadingStateBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
@@ -221,7 +200,6 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     FilterBuilder<T>? filterBuilder,
     ProgressIndicatorBuilder? progressIndicatorBuilder,
     SearchConfiguration searchConfig = const SearchConfiguration(),
-    ListConfiguration listConfig = const ListConfiguration(),
     PaginationConfiguration? paginationConfig,
     void Function(T item, int index)? onItemTap,
     void Function(String query)? onSearchChanged,
@@ -241,8 +219,8 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          key: key,
          asyncLoader: asyncLoader,
          itemBuilder: itemBuilder,
+         gridConfig: gridConfig,
          searchFieldBuilder: searchFieldBuilder,
-         separatorBuilder: separatorBuilder,
          loadingStateBuilder: loadingStateBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
@@ -251,7 +229,6 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          filterBuilder: filterBuilder,
          progressIndicatorBuilder: progressIndicatorBuilder,
          searchConfig: searchConfig,
-         listConfig: listConfig,
          paginationConfig: paginationConfig,
          onItemTap: onItemTap,
          onSearchChanged: onSearchChanged,
@@ -268,7 +245,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          accessibilityConfig: accessibilityConfig,
        );
 
-  /// Creates a searchable list driven entirely by an external [controller].
+  /// Creates a searchable grid driven entirely by an external [controller].
   ///
   /// The controller is responsible for providing data (via
   /// [SmartSearchController.setItems] or [SmartSearchController.setAsyncLoader]).
@@ -280,12 +257,12 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
   /// trigger mode) on this constructor.
   ///
   /// You are responsible for disposing the controller.
-  const SmartSearchList.controller({
+  const SmartSearchGrid.controller({
     Key? key,
     required SmartSearchController<T> controller,
     required ItemBuilder<T> itemBuilder,
+    required GridConfiguration gridConfig,
     SearchFieldBuilder? searchFieldBuilder,
-    SeparatorBuilder? separatorBuilder,
     LoadingStateBuilder? loadingStateBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
@@ -294,7 +271,6 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     FilterBuilder<T>? filterBuilder,
     ProgressIndicatorBuilder? progressIndicatorBuilder,
     SearchConfiguration searchConfig = const SearchConfiguration(),
-    ListConfiguration listConfig = const ListConfiguration(),
     PaginationConfiguration? paginationConfig,
     void Function(T item, int index)? onItemTap,
     void Function(String query)? onSearchChanged,
@@ -312,8 +288,8 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          key: key,
          controller: controller,
          itemBuilder: itemBuilder,
+         gridConfig: gridConfig,
          searchFieldBuilder: searchFieldBuilder,
-         separatorBuilder: separatorBuilder,
          loadingStateBuilder: loadingStateBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
@@ -322,7 +298,6 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          filterBuilder: filterBuilder,
          progressIndicatorBuilder: progressIndicatorBuilder,
          searchConfig: searchConfig,
-         listConfig: listConfig,
          paginationConfig: paginationConfig,
          onItemTap: onItemTap,
          onSearchChanged: onSearchChanged,
@@ -338,11 +313,11 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
        );
 
   @override
-  State<SmartSearchList<T>> createState() => _SmartSearchListState<T>();
+  State<SmartSearchGrid<T>> createState() => _SmartSearchGridState<T>();
 }
 
-class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
-    with SmartSearchStateMixin<T, SmartSearchList<T>> {
+class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
+    with SmartSearchStateMixin<T, SmartSearchGrid<T>> {
   late ScrollController _scrollController;
   late TextEditingController _searchTextController;
   late FocusNode _focusNode;
@@ -384,15 +359,13 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
   }
 
   @override
-  void didUpdateWidget(covariant SmartSearchList<T> oldWidget) {
+  void didUpdateWidget(covariant SmartSearchGrid<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     // Mixin: config updates
     updateControllerConfig(oldWidget);
 
-    // Scroll controller swap: detach listeners from old, attach to new.
-    // SliverSmartSearchList does not have this — the parent CustomScrollView
-    // owns the scroll controller there.
+    // Scroll controller swap
     if (widget.scrollController != oldWidget.scrollController) {
       _scrollController.removeListener(_onScroll);
       _scrollController.removeListener(_handleKeyboardOnScroll);
@@ -474,21 +447,15 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
 
   @override
   void dispose() {
-    // Remove listeners
     _searchTextController.removeListener(_onSearchTextChanged);
 
-    // Unconditionally remove scroll listeners — config may have changed
-    // between initState and dispose, and removeListener is safe to call
-    // even if the listener was never added.
     _scrollController.removeListener(_onScroll);
     _scrollController.removeListener(_handleKeyboardOnScroll);
 
-    // Only dispose the scroll controller if we created it internally
     if (_scrollControllerCreatedInternally) {
       _scrollController.dispose();
     }
 
-    // Dispose controllers
     _searchTextController.dispose();
     _focusNode.dispose();
 
@@ -500,33 +467,21 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
 
   @override
   Widget build(BuildContext context) {
-    // AnimatedBuilder manages its own listener on controller, so
-    // didUpdateWidget does not need to remove/re-add a manual listener
-    // on controller swap (unlike SliverSmartSearchList which uses setState).
     return AnimatedBuilder(
       animation: controller,
       builder: (context, child) {
         return Column(
           children: [
-            // Search field
             if (widget.searchConfig.enabled) _buildSearchField(),
-
-            // Below search widget
             if (widget.belowSearchWidget != null) widget.belowSearchWidget!,
-
-            // Inline progress indicator
             if (widget.progressIndicatorBuilder != null)
               widget.progressIndicatorBuilder!(
                 context,
                 controller.isLoading || controller.isLoadingMore,
               ),
-
-            // Sort and filter controls
             if (widget.sortBuilder != null || widget.filterBuilder != null)
               _buildControls(),
-
-            // Main list
-            Expanded(child: _buildList()),
+            Expanded(child: _buildGrid()),
           ],
         );
       },
@@ -577,141 +532,118 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
     );
   }
 
-  Widget _buildList() {
-    // Mixin: check loading/error/empty states
+  Widget _buildGrid() {
     final stateWidget = buildStateWidget(context);
     if (stateWidget != null) return stateWidget;
 
-    // Build the main list
-    Widget listWidget = _buildListView();
+    Widget gridWidget = _buildGridView();
 
-    // Add pull-to-refresh if enabled
-    if (widget.listConfig.pullToRefresh) {
-      listWidget = RefreshIndicator(
+    if (widget.gridConfig.pullToRefresh) {
+      gridWidget = RefreshIndicator(
         onRefresh: _handleRefresh,
-        child: listWidget,
+        child: gridWidget,
       );
     }
 
-    return listWidget;
+    return gridWidget;
   }
 
-  Widget _buildListView() {
+  /// Builds the grid content as a [CustomScrollView] with sliver children.
+  ///
+  /// Using slivers internally (rather than [GridView.builder]) lets the
+  /// load-more indicator span the full width below the grid rows instead
+  /// of occupying a single grid cell. The same approach is used for grouped
+  /// grids, keeping the architecture consistent with [SliverSmartSearchGrid].
+  Widget _buildGridView() {
     final searchTerms = computeSearchTerms();
+    final slivers = <Widget>[];
 
-    // Grouped rendering
     if (widget.groupBy != null) {
-      return _buildGroupedListView(searchTerms);
+      _addGroupedSlivers(slivers, searchTerms);
+    } else {
+      slivers.add(_buildGridSliver(searchTerms));
     }
 
-    // Flat list rendering
-    final itemCount = controller.isLoadingMore
-        ? controller.items.length + 1
-        : controller.items.length;
-
-    if (widget.separatorBuilder != null) {
-      return ListView.separated(
-        controller: _scrollController,
-        physics: widget.listConfig.physics,
-        padding: widget.listConfig.padding,
-        shrinkWrap: widget.listConfig.shrinkWrap,
-        reverse: widget.listConfig.reverse,
-        scrollDirection: widget.listConfig.scrollDirection,
-        addAutomaticKeepAlives: widget.listConfig.addAutomaticKeepAlives,
-        addRepaintBoundaries: widget.listConfig.addRepaintBoundaries,
-        addSemanticIndexes: widget.listConfig.addSemanticIndexes,
-        cacheExtent: widget.listConfig.cacheExtent,
-        clipBehavior: widget.listConfig.clipBehavior,
-        itemCount: itemCount,
-        separatorBuilder: widget.separatorBuilder!,
-        itemBuilder: (context, index) => buildItem(context, index, searchTerms),
-      );
+    if (controller.isLoadingMore) {
+      slivers.add(const SliverToBoxAdapter(child: DefaultLoadMoreWidget()));
     }
 
-    return ListView.builder(
+    return CustomScrollView(
       controller: _scrollController,
-      physics: widget.listConfig.physics,
-      padding: widget.listConfig.padding,
-      shrinkWrap: widget.listConfig.shrinkWrap,
-      reverse: widget.listConfig.reverse,
-      scrollDirection: widget.listConfig.scrollDirection,
-      addAutomaticKeepAlives: widget.listConfig.addAutomaticKeepAlives,
-      addRepaintBoundaries: widget.listConfig.addRepaintBoundaries,
-      addSemanticIndexes: widget.listConfig.addSemanticIndexes,
-      itemExtent: widget.listConfig.itemExtent,
-      cacheExtent: widget.listConfig.cacheExtent,
-      clipBehavior: widget.listConfig.clipBehavior,
-      itemCount: itemCount,
-      itemBuilder: (context, index) => buildItem(context, index, searchTerms),
+      physics: widget.gridConfig.physics,
+      shrinkWrap: widget.gridConfig.shrinkWrap,
+      reverse: widget.gridConfig.reverse,
+      scrollDirection: widget.gridConfig.scrollDirection,
+      cacheExtent: widget.gridConfig.cacheExtent,
+      clipBehavior: widget.gridConfig.clipBehavior,
+      slivers: slivers,
     );
   }
 
-  Widget _buildGroupedListView(List<String> searchTerms) {
+  /// Builds the flat (non-grouped) grid as a [SliverGrid], optionally wrapped
+  /// in [SliverPadding], with an optional [SliverToBoxAdapter] for the
+  /// load-more indicator. Mirrors [SliverSmartSearchGrid._buildSliverGrid].
+  Widget _buildGridSliver(List<String> searchTerms) {
+    final sliver = SliverGrid(
+      gridDelegate: widget.gridConfig.gridDelegate,
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => buildItem(context, index, searchTerms),
+        childCount: controller.items.length,
+        addAutomaticKeepAlives: widget.gridConfig.addAutomaticKeepAlives,
+        addRepaintBoundaries: widget.gridConfig.addRepaintBoundaries,
+        addSemanticIndexes: widget.gridConfig.addSemanticIndexes,
+      ),
+    );
+
+    if (widget.gridConfig.padding != null) {
+      return SliverPadding(padding: widget.gridConfig.padding!, sliver: sliver);
+    }
+
+    return sliver;
+  }
+
+  void _addGroupedSlivers(List<Widget> slivers, List<String> searchTerms) {
     final groups = computeGroups();
 
-    return ListView.builder(
-      controller: _scrollController,
-      physics: widget.listConfig.physics,
-      padding: widget.listConfig.padding,
-      shrinkWrap: widget.listConfig.shrinkWrap,
-      reverse: widget.listConfig.reverse,
-      scrollDirection: widget.listConfig.scrollDirection,
-      cacheExtent: widget.listConfig.cacheExtent,
-      clipBehavior: widget.listConfig.clipBehavior,
-      itemCount: _totalGroupedItemCount(groups.order, groups.map),
-      itemBuilder: (context, flatIndex) {
-        return _groupedItemBuilder(
-          context,
-          flatIndex,
-          groups.order,
-          groups.map,
-          searchTerms,
+    for (final key in groups.order) {
+      final groupItems = groups.map[key]!;
+
+      slivers.add(
+        SliverToBoxAdapter(
+          child:
+              widget.groupHeaderBuilder?.call(
+                context,
+                key,
+                groupItems.length,
+              ) ??
+              DefaultGroupHeader(groupValue: key, itemCount: groupItems.length),
+        ),
+      );
+
+      final gridSliver = SliverGrid(
+        gridDelegate: widget.gridConfig.gridDelegate,
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final indexed = groupItems[index];
+            return buildItem(context, indexed.index, searchTerms);
+          },
+          childCount: groupItems.length,
+          addAutomaticKeepAlives: widget.gridConfig.addAutomaticKeepAlives,
+          addRepaintBoundaries: widget.gridConfig.addRepaintBoundaries,
+          addSemanticIndexes: widget.gridConfig.addSemanticIndexes,
+        ),
+      );
+
+      if (widget.gridConfig.padding != null) {
+        slivers.add(
+          SliverPadding(
+            padding: widget.gridConfig.padding!,
+            sliver: gridSliver,
+          ),
         );
-      },
-    );
-  }
-
-  int _totalGroupedItemCount(
-    List<Object> groupOrder,
-    Map<Object, List<IndexedItem<T>>> groupMap,
-  ) {
-    int count = 0;
-    for (final key in groupOrder) {
-      count += 1 + groupMap[key]!.length; // 1 header + items
-    }
-    if (controller.isLoadingMore) count += 1;
-    return count;
-  }
-
-  Widget _groupedItemBuilder(
-    BuildContext context,
-    int flatIndex,
-    List<Object> groupOrder,
-    Map<Object, List<IndexedItem<T>>> groupMap,
-    List<String> searchTerms,
-  ) {
-    int current = 0;
-    for (final key in groupOrder) {
-      final groupItems = groupMap[key]!;
-      if (flatIndex == current) {
-        // This is a group header
-        return widget.groupHeaderBuilder?.call(
-              context,
-              key,
-              groupItems.length,
-            ) ??
-            DefaultGroupHeader(groupValue: key, itemCount: groupItems.length);
+      } else {
+        slivers.add(gridSliver);
       }
-      current += 1; // header
-      if (flatIndex < current + groupItems.length) {
-        final itemIndex = flatIndex - current;
-        final indexed = groupItems[itemIndex];
-        return buildItem(context, indexed.index, searchTerms);
-      }
-      current += groupItems.length;
     }
-
-    // Loading more indicator at bottom
-    return const DefaultLoadMoreWidget();
   }
 }

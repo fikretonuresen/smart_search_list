@@ -19,12 +19,14 @@ Every Flutter app with a list eventually needs search, filtering, sorting, and p
 
 ## Features
 
-- Offline list filtering with multi-field search
+- **List and Grid layouts** with search, filter, sort, and pagination
+- Offline filtering with multi-field search
 - Async data loading with pagination and pull-to-refresh
 - Fuzzy search with typo tolerance and scored ranking (opt-in)
 - Built-in search term highlighting widget
 - Multi-select with checkboxes and programmatic selection
-- Grouped lists with section headers (sticky headers in slivers)
+- Grouped lists and grids with section headers (sticky headers in slivers)
+- Sliver variants for both list and grid (`SliverSmartSearchList`, `SliverSmartSearchGrid`)
 - TalkBack/VoiceOver accessible with localizable labels
 - All platforms -- Android, iOS, Web, macOS, Windows, Linux
 
@@ -35,6 +37,15 @@ flutter pub add smart_search_list
 ```
 
 Requires Flutter 3.35.0 or higher.
+
+## Upgrading from v0.7.x
+
+v0.8.0 adds grid widgets and has two breaking changes for `SliverSmartSearchList` users:
+
+- **`onRefresh` removed**: Sliver widgets cannot contain a `RefreshIndicator`. Wrap your `CustomScrollView` with `RefreshIndicator` and call `controller.refresh()` directly.
+- **`onSearchChanged` now fires**: Previously accepted but silently ignored on sliver variants. It now fires post-debounce when the controller's query value changes. Remove the callback if you don't need it, or update it for the new timing.
+
+> **Note:** `onSearchChanged` timing differs by widget type. On `SmartSearchList` and `SmartSearchGrid`, it fires on every keystroke (pre-debounce). On `SliverSmartSearchList` and `SliverSmartSearchGrid`, it fires only when the controller's query value actually changes (post-debounce). This is because sliver variants do not own a text field — they observe controller state changes instead.
 
 ## Upgrading from v0.6.x
 
@@ -198,6 +209,30 @@ SmartSearchList<Product>(
 
 Sticky headers are supported in `SliverSmartSearchList` via `SliverMainAxisGroup`.
 
+## Grid Layout
+
+Use `SmartSearchGrid` for grid-based layouts. It shares the same constructors and features as `SmartSearchList` -- the main difference is `gridConfig` (with a required `gridDelegate`) instead of `listConfig`:
+
+```dart
+SmartSearchGrid<Product>(
+  items: products,
+  searchableFields: (p) => [p.name, p.category],
+  itemBuilder: (context, product, index, {searchTerms = const []}) {
+    return ProductCard(product: product);
+  },
+  gridConfig: GridConfiguration(
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      childAspectRatio: 0.7,
+    ),
+  ),
+)
+```
+
+For async grids with pagination, use `SmartSearchGrid.async()` — the API is identical to `SmartSearchList.async()`.
+
+All features work the same: `.async()` and `.controller()` constructors, grouping, multi-select, fuzzy search, pagination, accessibility. Use `SliverSmartSearchGrid` for `CustomScrollView` integration.
+
 ## Customization
 
 Every UI component is replaceable via builders:
@@ -286,7 +321,7 @@ Set `searchSemanticsEnabled: false` to disable all automatic semantics if you ha
 
 ## Example App
 
-The [example app](example/) includes 14 demos covering every feature: basic search, async pagination, fuzzy search, multi-select, grouped lists, sliver integration, accessibility, and more.
+The [example app](example/) includes 19 demos covering every feature: basic search, async pagination, fuzzy search, multi-select, grouped lists, grid layouts, sliver integration, accessibility, and more.
 
 ```
 cd example && flutter run

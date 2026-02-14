@@ -12,6 +12,9 @@ void main() {
           final controller = SmartSearchController<String>(
             debounceDelay: Duration.zero,
           );
+          addTearDown(() {
+            if (!controller.isDisposed) controller.dispose();
+          });
 
           final completer1 = Completer<List<String>>();
           final completer2 = Completer<List<String>>();
@@ -70,6 +73,9 @@ void main() {
           final controller = SmartSearchController<String>(
             debounceDelay: Duration.zero,
           );
+          addTearDown(() {
+            if (!controller.isDisposed) controller.dispose();
+          });
 
           final completers = <int, Completer<List<String>>>{};
           var callIndex = 0;
@@ -115,6 +121,9 @@ void main() {
           debounceDelay: Duration.zero,
           cacheResults: true,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         var loaderCallCount = 0;
         controller.setAsyncLoader((
@@ -159,8 +168,6 @@ void main() {
           2,
           reason: 'Cache was hit — loader should not be called a 3rd time',
         );
-
-        controller.dispose();
       });
 
       test(
@@ -170,6 +177,9 @@ void main() {
             debounceDelay: Duration.zero,
             cacheResults: true,
           );
+          addTearDown(() {
+            if (!controller.isDisposed) controller.dispose();
+          });
 
           var loaderCallCount = 0;
           controller.setAsyncLoader((
@@ -220,6 +230,9 @@ void main() {
             debounceDelay: Duration.zero,
             cacheResults: false,
           );
+          addTearDown(() {
+            if (!controller.isDisposed) controller.dispose();
+          });
 
           final completer = Completer<List<String>>();
           controller.setAsyncLoader(
@@ -254,6 +267,9 @@ void main() {
           debounceDelay: Duration.zero,
           cacheResults: false,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         final completer = Completer<List<String>>();
         controller.setAsyncLoader(
@@ -275,8 +291,6 @@ void main() {
         expect(notifyCount, 2);
         expect(controller.error, isA<Exception>());
         expect(controller.isLoading, false);
-
-        controller.dispose();
       });
 
       test('superseded async error does not notify', () async {
@@ -284,6 +298,9 @@ void main() {
           debounceDelay: Duration.zero,
           cacheResults: false,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         final completer1 = Completer<List<String>>();
         final completer2 = Completer<List<String>>();
@@ -329,8 +346,6 @@ void main() {
 
         expect(notifyCount, 1);
         expect(controller.items, ['result']);
-
-        controller.dispose();
       });
     });
 
@@ -340,6 +355,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         controller.setItems(['Apple', 'Banana', 'Cherry']);
 
@@ -353,8 +371,6 @@ void main() {
         // _setError(null) + _applyFiltersAndSort/_notifyListeners = 2
         expect(notifyCount, 2);
         expect(controller.items, ['Apple']);
-
-        controller.dispose();
       });
 
       test('offline empty search notifies correctly', () async {
@@ -362,6 +378,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         controller.setItems(['Apple', 'Banana']);
 
@@ -373,8 +392,6 @@ void main() {
 
         expect(notifyCount, 2);
         expect(controller.items, ['Apple', 'Banana']);
-
-        controller.dispose();
       });
 
       test('offline search is synchronous — no stale state possible', () {
@@ -382,6 +399,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         controller.setItems(['Apple', 'Banana', 'Cherry']);
 
@@ -397,8 +417,6 @@ void main() {
 
         controller.searchImmediate('');
         expect(controller.items.length, 3);
-
-        controller.dispose();
       });
     });
 
@@ -407,6 +425,9 @@ void main() {
         final controller = SmartSearchController<String>(
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         final completer = Completer<List<String>>();
         controller.setAsyncLoader(

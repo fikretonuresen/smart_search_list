@@ -208,6 +208,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
         controller.setItems(['Apple', 'Banana', 'Cherry']);
 
         await tester.pumpWidget(
@@ -262,6 +265,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
         controller.setItems(['Apple', 'Banana', 'Cherry']);
 
         await tester.pumpWidget(
@@ -313,6 +319,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
         controller.setItems(['Apple', 'Banana', 'Cherry']);
 
         await tester.pumpWidget(
@@ -367,6 +376,9 @@ void main() {
           searchableFields: (item) => [item],
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
         controller.setItems(['Apple', 'Banana', 'Cherry']);
 
         await tester.pumpWidget(
@@ -422,6 +434,9 @@ void main() {
         final extController = SmartSearchController<String>(
           searchableFields: (item) => [item],
         );
+        addTearDown(() {
+          if (!extController.isDisposed) extController.dispose();
+        });
         extController.setItems(['External']);
 
         SmartSearchController<String>? currentController = extController;
@@ -496,6 +511,9 @@ void main() {
           maxCacheSize: 0,
           debounceDelay: Duration.zero,
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         controller.setAsyncLoader((
           query, {
@@ -528,6 +546,9 @@ void main() {
         maxCacheSize: 0,
         debounceDelay: Duration.zero,
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -555,8 +576,6 @@ void main() {
       expect(controller.error, isNull, reason: 'No error on third search');
 
       expect(loaderCalls, 3, reason: 'All 3 searches should call the loader');
-
-      controller.dispose();
     });
   });
 }

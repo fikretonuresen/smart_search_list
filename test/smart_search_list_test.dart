@@ -7,27 +7,29 @@ void main() {
       final controller = SmartSearchController<String>(
         searchableFields: (item) => [item],
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       expect(controller.items, isEmpty);
       expect(controller.searchQuery, isEmpty);
       expect(controller.hasSearched, false);
       expect(controller.isLoading, false);
       expect(controller.error, isNull);
-
-      controller.dispose();
     });
 
     test('should handle offline items correctly', () {
       final controller = SmartSearchController<String>(
         searchableFields: (item) => [item],
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
 
       expect(controller.items.length, 3);
       expect(controller.allItems.length, 3);
-
-      controller.dispose();
     });
 
     test('should search items correctly', () async {
@@ -35,6 +37,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10), // Fast for testing
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
       controller.search('App');
@@ -44,14 +49,15 @@ void main() {
 
       expect(controller.hasSearched, true);
       expect(controller.searchQuery, 'App');
-
-      controller.dispose();
     });
 
     test('should dispose safely', () {
       final controller = SmartSearchController<String>(
         searchableFields: (item) => [item],
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.dispose();
 
@@ -68,6 +74,9 @@ void main() {
         caseSensitive: true,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'apple', 'APPLE']);
       controller.search('apple');
@@ -77,8 +86,6 @@ void main() {
       // Should only match exact case
       expect(controller.items.length, 1);
       expect(controller.items.first, 'apple');
-
-      controller.dispose();
     });
 
     test('should respect minSearchLength', () async {
@@ -87,6 +94,9 @@ void main() {
         minSearchLength: 3,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry']);
 
@@ -103,8 +113,6 @@ void main() {
 
       expect(controller.hasSearched, true);
       expect(controller.searchQuery, 'App');
-
-      controller.dispose();
     });
 
     test('should handle filters correctly', () async {
@@ -112,6 +120,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Apple', 'Banana', 'Cherry', 'Apricot']);
 
@@ -129,8 +140,6 @@ void main() {
 
       expect(controller.items.length, 4);
       expect(controller.activeFilters.isEmpty, true);
-
-      controller.dispose();
     });
 
     test('should handle sorting correctly', () async {
@@ -138,6 +147,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Banana', 'Apple', 'Cherry']);
 
@@ -153,8 +165,6 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 20));
 
       expect(controller.currentComparator, isNull);
-
-      controller.dispose();
     });
 
     test('should handle async data loading', () async {
@@ -162,6 +172,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       // Mock async loader
       controller.setAsyncLoader((
@@ -189,8 +202,6 @@ void main() {
       expect(controller.isLoading, false);
       expect(controller.items.length, 3);
       expect(controller.error, isNull);
-
-      controller.dispose();
     });
 
     test('should handle async errors', () async {
@@ -198,6 +209,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       // Mock async loader that throws error
       controller.setAsyncLoader((
@@ -221,8 +235,6 @@ void main() {
       expect(controller.isLoading, false);
       expect(controller.error, isNotNull);
       expect(controller.error.toString(), contains('Network error'));
-
-      controller.dispose();
     });
 
     test('should handle race conditions in async operations', () async {
@@ -230,6 +242,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       int callCount = 0;
       controller.setAsyncLoader((
@@ -256,8 +271,6 @@ void main() {
       // Should only show results from the second (latest) search
       expect(controller.items.length, 1);
       expect(controller.items.first, 'Result 2 for: second');
-
-      controller.dispose();
     });
 
     test('should handle pagination correctly', () async {
@@ -266,6 +279,9 @@ void main() {
         pageSize: 2,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -298,8 +314,6 @@ void main() {
 
       expect(controller.items.length, 3);
       expect(controller.hasMorePages, false);
-
-      controller.dispose();
     });
 
     test(
@@ -309,6 +323,9 @@ void main() {
           searchableFields: null,
           debounceDelay: const Duration(milliseconds: 10),
         );
+        addTearDown(() {
+          if (!controller.isDisposed) controller.dispose();
+        });
 
         controller.setItems(['Apple', 'Banana', 'Cherry']);
 
@@ -333,6 +350,9 @@ void main() {
         cacheResults: true,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -379,8 +399,6 @@ void main() {
             'Cache should still contain original page 0 results (2 items), '
             'not the corrupted list with loadMore results appended',
       );
-
-      controller.dispose();
     });
 
     test('setSortBy should invalidate cache in async mode', () async {
@@ -389,6 +407,9 @@ void main() {
         cacheResults: true,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -416,8 +437,6 @@ void main() {
         greaterThan(callsAfterFirstSearch),
         reason: 'setSortBy should invalidate cache and re-invoke async loader',
       );
-
-      controller.dispose();
     });
 
     test('setSortBy should apply comparator in offline mode', () async {
@@ -425,6 +444,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setItems(['Cherry', 'Apple', 'Banana']);
 
@@ -442,8 +464,6 @@ void main() {
       controller.setSortBy(null);
       await Future.delayed(const Duration(milliseconds: 20));
       expect(controller.items, ['Cherry', 'Apple', 'Banana']);
-
-      controller.dispose();
     });
 
     // -----------------------------------------------------------------------
@@ -455,6 +475,9 @@ void main() {
         pageSize: 2,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       int callCount = 0;
       controller.setAsyncLoader((
@@ -482,6 +505,9 @@ void main() {
         pageSize: 2,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -506,8 +532,6 @@ void main() {
 
       expect(controller.items.length, 4);
       expect(controller.items, ['A', 'B', 'C', 'D']);
-
-      controller.dispose();
     });
 
     test('cache should respect maxCacheSize eviction', () async {
@@ -516,6 +540,9 @@ void main() {
         maxCacheSize: 2,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       int callCount = 0;
       controller.setAsyncLoader((
@@ -553,8 +580,6 @@ void main() {
       controller.search('c');
       await Future.delayed(const Duration(milliseconds: 50));
       expect(callCount, 4, reason: 'Non-evicted entry should still be cached');
-
-      controller.dispose();
     });
 
     test('setSortBy in async mode should not client-sort results', () async {
@@ -562,6 +587,9 @@ void main() {
         cacheResults: true,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -579,8 +607,6 @@ void main() {
       // In async mode the comparator is NOT applied client-side —
       // the async loader is responsible for its own sort order.
       expect(controller.items, ['Z', 'A', 'M']);
-
-      controller.dispose();
     });
 
     test('search after loadMore should reset to page 0 results', () async {
@@ -589,6 +615,9 @@ void main() {
         cacheResults: false,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       controller.setAsyncLoader((
         query, {
@@ -618,8 +647,6 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 50));
       expect(controller.items, ['B1', 'B2']);
       expect(controller.hasMorePages, true);
-
-      controller.dispose();
     });
 
     // -----------------------------------------------------------------------
@@ -632,6 +659,9 @@ void main() {
         cacheResults: true,
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
 
       bool firstCall = true;
       controller.setAsyncLoader((
@@ -659,8 +689,6 @@ void main() {
 
       expect(controller.items.isNotEmpty, true);
       expect(controller.items.first, 'New Data');
-
-      controller.dispose();
     });
   });
 }

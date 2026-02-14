@@ -57,6 +57,9 @@ void main() {
         searchableFields: (item) => [item],
         debounceDelay: const Duration(milliseconds: 10),
       );
+      addTearDown(() {
+        if (!controller.isDisposed) controller.dispose();
+      });
       controller.setItems(const ['Apple', 'Avocado', 'Banana']);
 
       await tester.pumpWidget(

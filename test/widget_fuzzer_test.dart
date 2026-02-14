@@ -86,7 +86,15 @@ void main() {
                 if (state.searchEnabled) {
                   final finder = find.byType(TextField);
                   if (finder.evaluate().isNotEmpty) {
-                    final queries = ['', 'Item', 'X', 'a', 'Item1'];
+                    final queries = [
+                      '',
+                      'Item',
+                      'X',
+                      'a',
+                      'Item1',
+                      ' ',
+                      'Ítém',
+                    ];
                     await tester.enterText(
                       finder,
                       queries[rng.nextInt(queries.length)],
@@ -130,6 +138,9 @@ void main() {
                     searchableFields: (item) => [item],
                     debounceDelay: const Duration(milliseconds: 10),
                   );
+                  addTearDown(() {
+                    if (!ctrl.isDisposed) ctrl.dispose();
+                  });
                   ctrl.setItems(state.items);
                   state.externalController = ctrl;
                 } else {

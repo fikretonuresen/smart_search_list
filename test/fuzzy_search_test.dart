@@ -449,6 +449,9 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: threshold,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(items);
       return c;
     }
@@ -457,14 +460,12 @@ void main() {
       final c = makeController(threshold: 0.1);
       c.searchImmediate('ap');
       expect(c.items.length, greaterThan(0));
-      c.dispose();
     });
 
     test('threshold 0.5 — moderate, fewer results', () {
       final c = makeController(threshold: 0.5);
       c.searchImmediate('ap');
       expect(c.items.length, greaterThan(0));
-      c.dispose();
     });
 
     test('threshold 0.9 — strict, only near-exact', () {
@@ -478,7 +479,6 @@ void main() {
           reason: '$item should contain "ap" at threshold 0.9',
         );
       }
-      c.dispose();
     });
 
     test('higher threshold always returns <= items than lower threshold', () {
@@ -502,10 +502,6 @@ void main() {
           reason: 'Query "$query": moderate <= lenient',
         );
       }
-
-      lenient.dispose();
-      moderate.dispose();
-      strict.dispose();
     });
 
     test('exact match always passes any threshold', () {
@@ -530,14 +526,12 @@ void main() {
         isNot(contains('Apple')),
         reason: 'Edit distance match (score<0.6) should be filtered at 0.6',
       );
-      c.dispose();
     });
 
     test('subsequence matches survive moderate threshold', () {
       final c = makeController(threshold: 0.3);
       c.searchImmediate('apl'); // subsequence match for Apple
       expect(c.items, contains('Apple'));
-      c.dispose();
     });
   });
 
@@ -551,12 +545,14 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.1,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(['Pineapple', 'Apple', 'Maple', 'Applesauce']);
       c.searchImmediate('apple');
       // All items containing "apple" as substring get score 1.0.
       // Any of them can be first since scores are tied.
       expect(c.items.first, anyOf('Apple', 'Applesauce', 'Pineapple', 'Maple'));
-      c.dispose();
     });
 
     test('user sort overrides score sort', () {
@@ -565,11 +561,13 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.1,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(['Cherry', 'Apple', 'Banana']);
       c.setSortBy((a, b) => a.compareTo(b)); // alphabetical
       c.searchImmediate('a'); // all match
       expect(c.items.first, 'Apple'); // alphabetical, not score
-      c.dispose();
     });
 
     test('filters applied before fuzzy scoring', () {
@@ -578,11 +576,13 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.1,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(['Apple', 'Apricot', 'Avocado', 'Banana']);
       c.setFilter('no-b', (item) => !item.startsWith('B'));
       c.searchImmediate('a');
       expect(c.items, isNot(contains('Banana')));
-      c.dispose();
     });
   });
 
@@ -595,6 +595,9 @@ void main() {
         searchableFields: (item) => [item],
         fuzzySearchEnabled: false,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(['Apple', 'Banana', 'Cherry']);
 
       c.searchImmediate('apl'); // not a substring
@@ -602,7 +605,6 @@ void main() {
 
       c.searchImmediate('app'); // substring of Apple
       expect(c.items, equals(['Apple']));
-      c.dispose();
     });
 
     test('fuzzy on: subsequence matches included', () {
@@ -611,11 +613,13 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.1,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(['Apple', 'Banana', 'Cherry']);
 
       c.searchImmediate('apl');
       expect(c.items, contains('Apple'));
-      c.dispose();
     });
 
     test('toggle at runtime with updateFuzzySearchEnabled', () {
@@ -624,6 +628,9 @@ void main() {
         fuzzySearchEnabled: false,
         fuzzyThreshold: 0.1,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(['Apple', 'Banana']);
 
       c.searchImmediate('apl');
@@ -636,8 +643,6 @@ void main() {
       c.updateFuzzySearchEnabled(false);
       c.searchImmediate('apl');
       expect(c.items, isEmpty);
-
-      c.dispose();
     });
 
     test('toggle threshold at runtime with updateFuzzyThreshold', () {
@@ -646,6 +651,9 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.1,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(['Apple', 'Banana', 'Apricot']);
       c.searchImmediate('a');
       final lenientCount = c.items.length;
@@ -655,7 +663,6 @@ void main() {
       final strictCount = c.items.length;
 
       expect(strictCount, lessThanOrEqualTo(lenientCount));
-      c.dispose();
     });
   });
 
@@ -673,6 +680,9 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.3,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(items);
 
       final sw = Stopwatch()..start();
@@ -681,7 +691,6 @@ void main() {
 
       expect(sw.elapsedMilliseconds, lessThan(500));
       expect(c.items.length, greaterThan(0));
-      c.dispose();
     });
 
     test('10K items — edit distance search under 2000ms', () {
@@ -694,6 +703,9 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.1,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(items);
 
       final sw = Stopwatch()..start();
@@ -702,7 +714,6 @@ void main() {
 
       // Edit distance is slower due to sliding window, allow more time
       expect(sw.elapsedMilliseconds, lessThan(2000));
-      c.dispose();
     });
 
     test('1K items with multiple fields under 100ms', () {
@@ -712,6 +723,9 @@ void main() {
         fuzzySearchEnabled: true,
         fuzzyThreshold: 0.3,
       );
+      addTearDown(() {
+        if (!c.isDisposed) c.dispose();
+      });
       c.setItems(items);
 
       final sw = Stopwatch()..start();
@@ -719,7 +733,6 @@ void main() {
       sw.stop();
 
       expect(sw.elapsedMilliseconds, lessThan(100));
-      c.dispose();
     });
   });
 

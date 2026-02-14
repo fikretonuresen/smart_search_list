@@ -6,11 +6,16 @@ import 'examples/ecommerce_example.dart';
 import 'examples/fuzzy_search_example.dart';
 import 'examples/async_api_example.dart';
 import 'examples/multi_select_example.dart';
+import 'examples/async_grid_example.dart';
+import 'examples/grid_example.dart';
+import 'examples/grouped_grid_example.dart';
 import 'examples/grouped_list_example.dart';
 import 'examples/sliver_example.dart';
+import 'examples/sliver_grid_example.dart';
 import 'examples/grouped_sliver_example.dart';
 import 'examples/empty_states_example.dart';
 import 'examples/search_trigger_mode_example.dart';
+import 'examples/controller_grid_example.dart';
 import 'examples/advanced_config_example.dart';
 import 'examples/performance_test_example.dart';
 import 'examples/accessibility_example.dart';
@@ -111,6 +116,61 @@ class ExampleHomePage extends StatelessWidget {
             () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const MultiSelectExample()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Searchable Grid',
+            'Search items displayed in a grid layout',
+            Icons.grid_view,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GridExample()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Async Grid',
+            'Async loading with pagination in a grid',
+            Icons.cloud_download_outlined,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AsyncGridExample()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Grouped Grid',
+            'GridView with grouped sections and headers',
+            Icons.dashboard,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GroupedGridExample()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Sliver Grid',
+            'SliverSmartSearchGrid in a CustomScrollView',
+            Icons.grid_on,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SliverGridExample()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildExampleCard(
+            context,
+            'Controller Grid',
+            'External controller with config panel in a grid',
+            Icons.tune,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ControllerGridExample()),
             ),
           ),
           const SizedBox(height: 16),
