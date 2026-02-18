@@ -2,11 +2,11 @@ name: smart_search_list
 description: >-
   Searchable list and grid widget for Flutter. Offline filtering, async loading,
   pagination, fuzzy search, grouped lists and grids, and multi-select. Zero dependencies.
-version: 0.8.0
+version: 0.8.1
 repository: https://github.com/fikretonuresen/smart_search_list
 issue_tracker: https://github.com/fikretonuresen/smart_search_list/issues
 environment:
-  sdk: '>=3.8.0 <4.0.0'
+  sdk: ">=3.8.0 <4.0.0"
   flutter: ">=3.35.0"
 
 dependencies:
@@ -24,5 +24,3 @@ topics:
   - gridview
   - fuzzy-search
   - accessibility
-
-flutter:

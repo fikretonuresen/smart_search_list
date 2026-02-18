@@ -507,6 +507,9 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
       animation: controller,
       builder: (context, child) {
         return Column(
+          mainAxisSize: widget.listConfig.shrinkWrap
+              ? MainAxisSize.min
+              : MainAxisSize.max,
           children: [
             // Search field
             if (widget.searchConfig.enabled) _buildSearchField(),
@@ -526,7 +529,11 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
               _buildControls(),
 
             // Main list
-            Expanded(child: _buildList()),
+            Flexible(
+              fit: widget.listConfig.shrinkWrap ? FlexFit.loose : FlexFit.tight,
+              flex: widget.listConfig.shrinkWrap ? 0 : 1,
+              child: _buildList(),
+            ),
           ],
         );
       },
