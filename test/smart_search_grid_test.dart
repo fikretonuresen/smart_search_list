@@ -1884,4 +1884,45 @@ void main() {
       await tester.pumpAndSettle();
     });
   });
+  group('SmartSearchGrid - shrinkWrap', () {
+    // -----------------------------------------------------------------------
+    // Widget tests
+    // -----------------------------------------------------------------------
+    testWidgets(
+      'shrinkWrap: true renders without overflow in unbounded height',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const Text('Above'),
+                    SmartSearchGrid<String>(
+                      searchableFields: (item) => [item],
+                      items: const ['Apple', 'Banana', 'Cherry'],
+                      itemBuilder:
+                          (context, item, index, {searchTerms = const []}) =>
+                              ListTile(title: Text(item)),
+                      gridConfig: const GridConfiguration(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 1,
+                        ),
+                        shrinkWrap: true,
+                      ),
+                    ),
+                    const Text('Below'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Apple'), findsOneWidget);
+        expect(find.text('Below'), findsOneWidget);
+      },
+    );
+  });
 }
