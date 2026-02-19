@@ -227,14 +227,14 @@ class _ControllerGridExampleState extends State<ControllerGridExample> {
                   ),
                 );
               },
-              gridConfig: GridConfiguration(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              gridConfig: const GridConfiguration(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 1.2,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
                 ),
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
               ),
               searchConfig: const SearchConfiguration(
                 hintText: 'Search products...',

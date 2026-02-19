@@ -1,3 +1,14 @@
+## 0.8.1 - 2026-02-19
+
+### Bug Fixes
+- Fix `shrinkWrap: true` causing `RenderFlex` overflow in unbounded-height parents — `SmartSearchList` and `SmartSearchGrid` now use `Flexible` instead of `Expanded` (thanks @Woolloff, PR #1)
+- Fix `SliverSmartSearchList` silently ignoring `listConfig.padding` — now applies `SliverPadding` in both flat and grouped modes
+
+### Improvements
+- Add `const` to `GridConfiguration` across all grid examples
+- Use `SearchHighlightText` in grouped grid example for search term highlighting
+- Expand "Grouped Lists" README section to "Grouped Lists and Grids" with grid example
+
 ## 0.8.0 - 2026-02-14
 
 GridView support: search, filter, sort, pagination, grouping, and multi-select in grid layouts.

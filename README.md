@@ -193,7 +193,7 @@ SmartSearchList<String>(
 
 Programmatic control via the controller: `selectAll()`, `deselectAll()`, `selectWhere((item) => ...)`, `toggleSelection(item)`.
 
-## Grouped Lists
+## Grouped Lists and Grids
 
 ```dart
 SmartSearchList<Product>(
@@ -207,7 +207,27 @@ SmartSearchList<Product>(
 )
 ```
 
-Sticky headers are supported in `SliverSmartSearchList` via `SliverMainAxisGroup`.
+Grids support the same grouping API:
+
+```dart
+SmartSearchGrid<Product>(
+  items: products,
+  searchableFields: (p) => [p.name, p.category],
+  itemBuilder: (context, product, index, {searchTerms = const []}) {
+    return ProductCard(product: product);
+  },
+  gridConfig: const GridConfiguration(
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      childAspectRatio: 0.7,
+    ),
+  ),
+  groupBy: (product) => product.category,
+  groupComparator: (a, b) => (a as String).compareTo(b as String),
+)
+```
+
+Sticky headers are supported in `SliverSmartSearchList` and `SliverSmartSearchGrid` via `SliverMainAxisGroup`.
 
 ## Grid Layout
 
@@ -220,7 +240,7 @@ SmartSearchGrid<Product>(
   itemBuilder: (context, product, index, {searchTerms = const []}) {
     return ProductCard(product: product);
   },
-  gridConfig: GridConfiguration(
+  gridConfig: const GridConfiguration(
     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: 2,
       childAspectRatio: 0.7,

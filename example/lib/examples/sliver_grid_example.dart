@@ -65,14 +65,14 @@ class SliverGridExample extends StatelessWidget {
                 ),
               );
             },
-            gridConfig: GridConfiguration(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridConfig: const GridConfiguration(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 childAspectRatio: 1.0,
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
               ),
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
             ),
           ),
         ],

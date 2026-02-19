@@ -17,7 +17,7 @@ import 'smart_search_state.dart';
 /// - [SmartSearchList.async] — async mode where the server handles search.
 /// - [SmartSearchList.controller] — fully controller-driven rendering.
 ///
-/// This widget uses a [Column] with [Expanded] internally, so it must receive
+/// This widget uses a [Column] with [Flexible] internally, so it must receive
 /// a bounded height constraint from its parent. Do not place it inside a
 /// [ListView] or [SingleChildScrollView] — use [SliverSmartSearchList] for
 /// [CustomScrollView] integration instead.

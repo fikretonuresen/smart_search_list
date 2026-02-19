@@ -6,7 +6,7 @@ version: 0.8.1
 repository: https://github.com/fikretonuresen/smart_search_list
 issue_tracker: https://github.com/fikretonuresen/smart_search_list/issues
 environment:
-  sdk: ">=3.8.0 <4.0.0"
+  sdk: '>=3.8.0 <4.0.0'
   flutter: ">=3.35.0"
 
 dependencies:

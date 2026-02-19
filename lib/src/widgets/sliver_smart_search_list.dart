@@ -12,11 +12,11 @@ import 'smart_search_state.dart';
 /// composed with other slivers (e.g. [SliverAppBar]) inside a
 /// [CustomScrollView].
 ///
-/// Unlike [SmartSearchList], this widget does **not** include a built-in
-/// search field, sort/filter builders, separator builder, progress indicator
-/// builder, or scroll controller. The parent [CustomScrollView] (or a
-/// companion sliver) should provide the search input and drive the
-/// [SmartSearchController] externally.
+/// Unlike [SmartSearchList], this widget does **not** use a [Column] with
+/// [Flexible] and does **not** include a built-in search field, sort/filter
+/// builders, separator builder, progress indicator builder, or scroll
+/// controller. The parent [CustomScrollView] (or a companion sliver) should
+/// provide the search input and drive the [SmartSearchController] externally.
 ///
 /// Three constructors target different use cases:
 /// - [SliverSmartSearchList.new] — offline mode with client-side search.
@@ -352,7 +352,7 @@ class _SliverSmartSearchListState<T extends Object>
 
     final searchTerms = computeSearchTerms();
 
-    return SliverList(
+    Widget sliverList = SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) => buildItem(context, index, searchTerms),
         childCount: itemCount,
@@ -361,6 +361,15 @@ class _SliverSmartSearchListState<T extends Object>
         addSemanticIndexes: widget.listConfig.addSemanticIndexes,
       ),
     );
+
+    if (widget.listConfig.padding != null) {
+      sliverList = SliverPadding(
+        padding: widget.listConfig.padding!,
+        sliver: sliverList,
+      );
+    }
+
+    return sliverList;
   }
 
   Widget _buildGroupedSlivers() {
@@ -391,19 +400,7 @@ class _SliverSmartSearchListState<T extends Object>
                     ),
               ),
             ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final indexed = groupItems[index];
-                  return buildItem(context, indexed.index, searchTerms);
-                },
-                childCount: groupItems.length,
-                addAutomaticKeepAlives:
-                    widget.listConfig.addAutomaticKeepAlives,
-                addRepaintBoundaries: widget.listConfig.addRepaintBoundaries,
-                addSemanticIndexes: widget.listConfig.addSemanticIndexes,
-              ),
-            ),
+            _buildGroupListSliver(groupItems, searchTerms),
           ],
         ),
       );
@@ -417,5 +414,34 @@ class _SliverSmartSearchListState<T extends Object>
     // build() must return a single Widget, so wrap all group slivers in a
     // SliverMainAxisGroup.
     return SliverMainAxisGroup(slivers: slivers);
+  }
+
+  /// Builds a per-group [SliverList], optionally wrapped in [SliverPadding].
+  /// Mirrors [SliverSmartSearchGrid._buildGroupGrid] padding logic.
+  Widget _buildGroupListSliver(
+    List<IndexedItem<T>> groupItems,
+    List<String> searchTerms,
+  ) {
+    Widget listSliver = SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final indexed = groupItems[index];
+          return buildItem(context, indexed.index, searchTerms);
+        },
+        childCount: groupItems.length,
+        addAutomaticKeepAlives: widget.listConfig.addAutomaticKeepAlives,
+        addRepaintBoundaries: widget.listConfig.addRepaintBoundaries,
+        addSemanticIndexes: widget.listConfig.addSemanticIndexes,
+      ),
+    );
+
+    if (widget.listConfig.padding != null) {
+      listSliver = SliverPadding(
+        padding: widget.listConfig.padding!,
+        sliver: listSliver,
+      );
+    }
+
+    return listSliver;
   }
 }

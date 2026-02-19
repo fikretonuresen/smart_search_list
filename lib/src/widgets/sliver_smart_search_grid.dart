@@ -13,10 +13,11 @@ import 'smart_search_state.dart';
 /// composed with other slivers (e.g. [SliverAppBar]) inside a
 /// [CustomScrollView].
 ///
-/// Unlike [SmartSearchGrid], this widget does **not** include a built-in
-/// search field, sort/filter builders, progress indicator builder, or scroll
-/// controller. The parent [CustomScrollView] (or a companion sliver) should
-/// provide the search input and drive the [SmartSearchController] externally.
+/// Unlike [SmartSearchGrid], this widget does **not** use a [Column] with
+/// [Flexible] and does **not** include a built-in search field, sort/filter
+/// builders, progress indicator builder, or scroll controller. The parent
+/// [CustomScrollView] (or a companion sliver) should provide the search input
+/// and drive the [SmartSearchController] externally.
 ///
 /// Three constructors target different use cases:
 /// - [SliverSmartSearchGrid.new] — offline mode with client-side search.

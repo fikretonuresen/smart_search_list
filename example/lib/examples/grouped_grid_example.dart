@@ -119,8 +119,9 @@ class GroupedGridExample extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.name,
+                  SearchHighlightText(
+                    text: product.name,
+                    searchTerms: searchTerms,
                     style: Theme.of(context).textTheme.titleSmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -145,14 +146,14 @@ class GroupedGridExample extends StatelessWidget {
             ),
           );
         },
-        gridConfig: GridConfiguration(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridConfig: const GridConfiguration(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             childAspectRatio: 1.6,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
           ),
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(8),
         ),
         groupBy: (product) => product.category,
         groupComparator: (a, b) => (a as String).compareTo(b as String),

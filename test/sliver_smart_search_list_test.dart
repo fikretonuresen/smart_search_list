@@ -1590,4 +1590,94 @@ void main() {
       });
     });
   });
+
+  // -------------------------------------------------------------------------
+  // ListConfiguration passthrough (sliver variant)
+  // -------------------------------------------------------------------------
+
+  group('SliverSmartSearchList — ListConfiguration passthrough', () {
+    testWidgets('listConfig.padding creates SliverPadding in flat list', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                SliverSmartSearchList<String>(
+                  items: const ['Apple'],
+                  searchableFields: (item) => [item],
+                  itemBuilder:
+                      (context, item, index, {searchTerms = const []}) {
+                        return ListTile(title: Text(item));
+                      },
+                  listConfig: const ListConfiguration(
+                    padding: EdgeInsets.all(16.0),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SliverPadding), findsOneWidget);
+    });
+
+    testWidgets('no SliverPadding when padding is null', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                SliverSmartSearchList<String>(
+                  items: const ['Apple'],
+                  searchableFields: (item) => [item],
+                  itemBuilder:
+                      (context, item, index, {searchTerms = const []}) {
+                        return ListTile(title: Text(item));
+                      },
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SliverPadding), findsNothing);
+    });
+
+    testWidgets('grouped list with padding wraps each group in SliverPadding', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                SliverSmartSearchList<String>(
+                  items: const ['Apple', 'Banana'],
+                  searchableFields: (item) => [item],
+                  itemBuilder:
+                      (context, item, index, {searchTerms = const []}) {
+                        return ListTile(title: Text(item));
+                      },
+                  listConfig: const ListConfiguration(
+                    padding: EdgeInsets.all(8.0),
+                  ),
+                  groupBy: (item) => item[0],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Each group gets its own SliverPadding (2 groups: A, B)
+      expect(find.byType(SliverPadding), findsNWidgets(2));
+    });
+  });
 }
