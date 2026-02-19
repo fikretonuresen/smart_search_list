@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_search_list/smart_search_list.dart';
 
@@ -690,5 +691,41 @@ void main() {
       expect(controller.items.isNotEmpty, true);
       expect(controller.items.first, 'New Data');
     });
+  });
+  group('SmartSearchList - shrinkWrap', () {
+    // -----------------------------------------------------------------------
+    // Widget tests
+    // -----------------------------------------------------------------------
+    testWidgets(
+      'shrinkWrap: true renders without overflow in unbounded height',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const Text('Above'),
+                    SmartSearchList<String>(
+                      searchableFields: (item) => [item],
+                      items: const ['Apple', 'Banana', 'Cherry'],
+                      itemBuilder:
+                          (context, item, index, {searchTerms = const []}) =>
+                              ListTile(title: Text(item)),
+                      listConfig: const ListConfiguration(shrinkWrap: true),
+                    ),
+                    const Text('Below'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Apple'), findsOneWidget);
+        expect(find.text('Below'), findsOneWidget);
+      },
+    );
   });
 }

@@ -471,6 +471,9 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
       animation: controller,
       builder: (context, child) {
         return Column(
+          mainAxisSize: widget.gridConfig.shrinkWrap
+              ? MainAxisSize.min
+              : MainAxisSize.max,
           children: [
             if (widget.searchConfig.enabled) _buildSearchField(),
             if (widget.belowSearchWidget != null) widget.belowSearchWidget!,
@@ -481,7 +484,12 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
               ),
             if (widget.sortBuilder != null || widget.filterBuilder != null)
               _buildControls(),
-            Expanded(child: _buildGrid()),
+            Flexible(
+              fit: widget.gridConfig.shrinkWrap ? FlexFit.loose : FlexFit.tight,
+              flex: widget.gridConfig.shrinkWrap ? 0 : 1,
+
+              child: _buildGrid(),
+            ),
           ],
         );
       },
