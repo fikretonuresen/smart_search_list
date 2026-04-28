@@ -578,4 +578,165 @@ void main() {
       expect(loaderCalls, 3, reason: 'All 3 searches should call the loader');
     });
   });
+
+  // =========================================================================
+  // B5 — emptyStateBuilder flicker before initial async load
+  //
+  // Repro: in .async mode, the initial search('') was debounced. During the
+  // debounce window isLoading was still false and items were empty, so the
+  // empty-state builder rendered for ~debounceDelay before the loading state
+  // appeared. Fix: bypass debounce on the initial load (searchImmediate).
+  // =========================================================================
+
+  group('B5: initial async load shows loading state, not empty state', () {
+    testWidgets('SmartSearchList.async — loading state on first frame', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SmartSearchList<String>.async(
+              asyncLoader: (query, {int page = 0, int pageSize = 20}) async {
+                await Future.delayed(const Duration(milliseconds: 200));
+                return ['Item 1'];
+              },
+              searchConfig: const SearchConfiguration(
+                debounceDelay: Duration(milliseconds: 300),
+              ),
+              loadingStateBuilder: (context) => const Text('LOADING'),
+              emptyStateBuilder: (context) => const Text('EMPTY'),
+              itemBuilder: (context, item, index, {searchTerms = const []}) =>
+                  ListTile(title: Text(item)),
+            ),
+          ),
+        ),
+      );
+
+      // First frame after mount — must already be in loading, never empty.
+      expect(find.text('LOADING'), findsOneWidget);
+      expect(find.text('EMPTY'), findsNothing);
+
+      // Drain async work cleanly.
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(find.text('Item 1'), findsOneWidget);
+    });
+
+    testWidgets('SliverSmartSearchList.async — loading state on first frame', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                SliverSmartSearchList<String>.async(
+                  asyncLoader:
+                      (query, {int page = 0, int pageSize = 20}) async {
+                        await Future.delayed(const Duration(milliseconds: 200));
+                        return ['Item 1'];
+                      },
+                  searchConfig: const SearchConfiguration(
+                    debounceDelay: Duration(milliseconds: 300),
+                  ),
+                  loadingStateBuilder: (context) => const Text('LOADING'),
+                  emptyStateBuilder: (context) => const Text('EMPTY'),
+                  itemBuilder:
+                      (context, item, index, {searchTerms = const []}) =>
+                          ListTile(title: Text(item)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('LOADING'), findsOneWidget);
+      expect(find.text('EMPTY'), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(find.text('Item 1'), findsOneWidget);
+    });
+
+    testWidgets('SmartSearchGrid.async — loading state on first frame', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SmartSearchGrid<String>.async(
+              asyncLoader: (query, {int page = 0, int pageSize = 20}) async {
+                await Future.delayed(const Duration(milliseconds: 200));
+                return ['Item 1'];
+              },
+              gridConfig: GridConfiguration(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 5.0,
+                ),
+              ),
+              searchConfig: const SearchConfiguration(
+                debounceDelay: Duration(milliseconds: 300),
+              ),
+              loadingStateBuilder: (context) => const Text('LOADING'),
+              emptyStateBuilder: (context) => const Text('EMPTY'),
+              itemBuilder: (context, item, index, {searchTerms = const []}) =>
+                  Text(item),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('LOADING'), findsOneWidget);
+      expect(find.text('EMPTY'), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(find.text('Item 1'), findsOneWidget);
+    });
+
+    testWidgets('SliverSmartSearchGrid.async — loading state on first frame', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                SliverSmartSearchGrid<String>.async(
+                  asyncLoader:
+                      (query, {int page = 0, int pageSize = 20}) async {
+                        await Future.delayed(const Duration(milliseconds: 200));
+                        return ['Item 1'];
+                      },
+                  gridConfig: GridConfiguration(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 5.0,
+                    ),
+                  ),
+                  searchConfig: const SearchConfiguration(
+                    debounceDelay: Duration(milliseconds: 300),
+                  ),
+                  loadingStateBuilder: (context) => const Text('LOADING'),
+                  emptyStateBuilder: (context) => const Text('EMPTY'),
+                  itemBuilder:
+                      (context, item, index, {searchTerms = const []}) =>
+                          Text(item),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('LOADING'), findsOneWidget);
+      expect(find.text('EMPTY'), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pumpAndSettle();
+      expect(find.text('Item 1'), findsOneWidget);
+    });
+  });
 }

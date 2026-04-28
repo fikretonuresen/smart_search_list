@@ -295,12 +295,8 @@ class SmartSearchController<T extends Object> extends ChangeNotifier {
   /// Performs a debounced search for [query].
   ///
   /// Triggers after [debounceDelay]. Subsequent calls within the debounce
-  /// window cancel previous pending searches.
-  ///
-  /// **Note:** The debounce delay applies to every call, including the initial
-  /// load when the widget calls `search('')`. This means there is a
-  /// [debounceDelay] pause (default 300 ms) before the first results appear.
-  /// Use [searchImmediate] if you need results without the debounce delay.
+  /// window cancel previous pending searches. Use [searchImmediate] if you
+  /// need results without the debounce delay.
   void search(String query) {
     if (_isDisposed) return;
 

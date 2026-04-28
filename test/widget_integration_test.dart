@@ -410,5 +410,59 @@ void main() {
       completer.complete(['Item 21', 'Item 22']);
       await tester.pumpAndSettle();
     });
+
+    testWidgets('custom loadingMoreIndicatorBuilder is rendered during pagination', (
+      tester,
+    ) async {
+      final completer = Completer<List<String>>();
+      final controller = SmartSearchController<String>(pageSize: 5);
+      controller.setAsyncLoader((
+        query, {
+        int page = 0,
+        int pageSize = 5,
+      }) async {
+        if (page == 0) {
+          return List.generate(pageSize, (i) => 'Item ${i + 1}');
+        }
+        return completer.future;
+      });
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SmartSearchList<String>.controller(
+              controller: controller,
+              searchConfig: const SearchConfiguration(enabled: false),
+              paginationConfig: const PaginationConfiguration(
+                pageSize: 5,
+                enabled: true,
+              ),
+              loadingMoreIndicatorBuilder: (context) =>
+                  const Text('CUSTOM_LOAD_MORE'),
+              itemBuilder: (context, item, index, {searchTerms = const []}) {
+                return SizedBox(height: 40, child: ListTile(title: Text(item)));
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Trigger initial load (immediate to bypass debounce) and wait for it to settle
+      controller.searchImmediate('');
+      await tester.pumpAndSettle();
+      expect(find.text('Item 1'), findsOneWidget);
+
+      // Trigger pagination directly — page 1 stays pending on the completer
+      unawaited(controller.loadMore());
+      await tester.pump();
+
+      // Custom indicator should render; the default should not
+      expect(find.text('CUSTOM_LOAD_MORE'), findsOneWidget);
+      expect(find.byType(DefaultLoadMoreWidget), findsNothing);
+
+      completer.complete(['Item 6']);
+      await tester.pumpAndSettle();
+    });
   });
 }
