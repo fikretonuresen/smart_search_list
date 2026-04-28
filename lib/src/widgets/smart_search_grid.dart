@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
 import '../core/smart_search_controller.dart';
 import '../models/accessibility_configuration.dart';
 import '../models/grid_configuration.dart';
@@ -83,6 +84,7 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     super.controller,
     this.searchFieldBuilder,
     super.loadingStateBuilder,
+    super.loadingMoreIndicatorBuilder,
     super.errorStateBuilder,
     super.emptyStateBuilder,
     super.emptySearchStateBuilder,
@@ -123,6 +125,8 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     required GridConfiguration gridConfig,
     SearchFieldBuilder? searchFieldBuilder,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -143,8 +147,7 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     Object Function(T item)? groupBy,
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          items: items,
@@ -153,6 +156,7 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
          gridConfig: gridConfig,
          searchFieldBuilder: searchFieldBuilder,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -187,12 +191,13 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
   /// internally.
   const SmartSearchGrid.async({
     Key? key,
-    required Future<List<T>> Function(String query, {int page, int pageSize})
-    asyncLoader,
+    required Future<List<T>> Function(String query, {int page, int pageSize}) asyncLoader,
     required ItemBuilder<T> itemBuilder,
     required GridConfiguration gridConfig,
     SearchFieldBuilder? searchFieldBuilder,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -213,8 +218,7 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     Object Function(T item)? groupBy,
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          asyncLoader: asyncLoader,
@@ -222,6 +226,7 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
          gridConfig: gridConfig,
          searchFieldBuilder: searchFieldBuilder,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -264,6 +269,8 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     required GridConfiguration gridConfig,
     SearchFieldBuilder? searchFieldBuilder,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -282,8 +289,7 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     Object Function(T item)? groupBy,
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          controller: controller,
@@ -291,6 +297,7 @@ class SmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
          gridConfig: gridConfig,
          searchFieldBuilder: searchFieldBuilder,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -425,8 +432,7 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
     if (isDisposed) return;
 
     if (_scrollController.hasClients &&
-        _scrollController.position.userScrollDirection !=
-            ScrollDirection.idle) {
+        _scrollController.position.userScrollDirection != ScrollDirection.idle) {
       FocusScope.of(context).unfocus();
     }
   }
@@ -471,9 +477,7 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
       animation: controller,
       builder: (context, child) {
         return Column(
-          mainAxisSize: widget.gridConfig.shrinkWrap
-              ? MainAxisSize.min
-              : MainAxisSize.max,
+          mainAxisSize: widget.gridConfig.shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
           children: [
             if (widget.searchConfig.enabled) _buildSearchField(),
             if (widget.belowSearchWidget != null) widget.belowSearchWidget!,
@@ -482,8 +486,7 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
                 context,
                 controller.isLoading || controller.isLoadingMore,
               ),
-            if (widget.sortBuilder != null || widget.filterBuilder != null)
-              _buildControls(),
+            if (widget.sortBuilder != null || widget.filterBuilder != null) _buildControls(),
             Flexible(
               fit: widget.gridConfig.shrinkWrap ? FlexFit.loose : FlexFit.tight,
               flex: widget.gridConfig.shrinkWrap ? 0 : 1,
@@ -498,12 +501,7 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
 
   Widget _buildSearchField() {
     if (widget.searchFieldBuilder != null) {
-      return widget.searchFieldBuilder!(
-        context,
-        _searchTextController,
-        _focusNode,
-        _clearSearch,
-      );
+      return widget.searchFieldBuilder!(context, _searchTextController, _focusNode, _clearSearch);
     }
 
     return DefaultSearchField(
@@ -547,10 +545,7 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
     Widget gridWidget = _buildGridView();
 
     if (widget.gridConfig.pullToRefresh) {
-      gridWidget = RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: gridWidget,
-      );
+      gridWidget = RefreshIndicator(onRefresh: _handleRefresh, child: gridWidget);
     }
 
     return gridWidget;
@@ -573,7 +568,7 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
     }
 
     if (controller.isLoadingMore) {
-      slivers.add(const SliverToBoxAdapter(child: DefaultLoadMoreWidget()));
+      slivers.add(SliverToBoxAdapter(child: widget.loadingMoreIndicatorBuilder.call(context)));
     }
 
     return CustomScrollView(
@@ -619,11 +614,7 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
       slivers.add(
         SliverToBoxAdapter(
           child:
-              widget.groupHeaderBuilder?.call(
-                context,
-                key,
-                groupItems.length,
-              ) ??
+              widget.groupHeaderBuilder?.call(context, key, groupItems.length) ??
               DefaultGroupHeader(groupValue: key, itemCount: groupItems.length),
         ),
       );
@@ -643,12 +634,7 @@ class _SmartSearchGridState<T extends Object> extends State<SmartSearchGrid<T>>
       );
 
       if (widget.gridConfig.padding != null) {
-        slivers.add(
-          SliverPadding(
-            padding: widget.gridConfig.padding!,
-            sliver: gridSliver,
-          ),
-        );
+        slivers.add(SliverPadding(padding: widget.gridConfig.padding!, sliver: gridSliver));
       } else {
         slivers.add(gridSliver);
       }

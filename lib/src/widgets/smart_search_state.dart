@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+
 import '../core/smart_search_controller.dart';
 import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
@@ -20,8 +21,7 @@ abstract class SmartSearchWidgetBase<T extends Object> extends StatefulWidget {
   /// The `page` parameter is **zero-indexed**: the first page is `0`, the
   /// second is `1`, and so on. `pageSize` reflects the configured page size
   /// (default 20).
-  final Future<List<T>> Function(String query, {int page, int pageSize})?
-  asyncLoader;
+  final Future<List<T>> Function(String query, {int page, int pageSize})? asyncLoader;
 
   /// Function to extract searchable text from items.
   ///
@@ -38,6 +38,9 @@ abstract class SmartSearchWidgetBase<T extends Object> extends StatefulWidget {
 
   /// Builder for the loading state shown while data is loading.
   final LoadingStateBuilder? loadingStateBuilder;
+
+  /// Builder for the loading more indicator shown during pagination.
+  final WidgetBuilder loadingMoreIndicatorBuilder;
 
   /// Builder for the error state shown when loading fails.
   final ErrorStateBuilder? errorStateBuilder;
@@ -108,6 +111,7 @@ abstract class SmartSearchWidgetBase<T extends Object> extends StatefulWidget {
     required this.itemBuilder,
     this.controller,
     this.loadingStateBuilder,
+    this.loadingMoreIndicatorBuilder = defaultLoadingMoreIndicatorBuilder,
     this.errorStateBuilder,
     this.emptyStateBuilder,
     this.emptySearchStateBuilder,
@@ -124,6 +128,9 @@ abstract class SmartSearchWidgetBase<T extends Object> extends StatefulWidget {
     this.groupComparator,
     this.accessibilityConfig = const AccessibilityConfiguration(),
   });
+
+  @protected
+  static Widget defaultLoadingMoreIndicatorBuilder(BuildContext _) => const DefaultLoadMoreWidget();
 }
 
 /// Shared lifecycle, item building, and state management logic for all
@@ -131,11 +138,7 @@ abstract class SmartSearchWidgetBase<T extends Object> extends StatefulWidget {
 ///
 /// Each concrete State class mixes this in and handles layout-specific
 /// concerns (search field, scroll controller, list vs grid rendering).
-mixin SmartSearchStateMixin<
-  T extends Object,
-  W extends SmartSearchWidgetBase<T>
->
-    on State<W> {
+mixin SmartSearchStateMixin<T extends Object, W extends SmartSearchWidgetBase<T>> on State<W> {
   late SmartSearchController<T> _controller;
   bool _isDisposed = false;
   bool _controllerCreatedInternally = false;
@@ -174,10 +177,7 @@ mixin SmartSearchStateMixin<
       );
       _controllerCreatedInternally = true;
     }
-    assert(
-      !_controller.isDisposed,
-      'Controller must not be disposed at initState',
-    );
+    assert(!_controller.isDisposed, 'Controller must not be disposed at initState');
 
     if (widget.accessibilityConfig.searchSemanticsEnabled) {
       _controller.addListener(_onControllerChangedForAnnouncement);
@@ -206,28 +206,21 @@ mixin SmartSearchStateMixin<
       _controller.setItems(widget.items!);
     }
 
-    if (widget.asyncLoader != oldWidget.asyncLoader &&
-        widget.asyncLoader != null) {
+    if (widget.asyncLoader != oldWidget.asyncLoader && widget.asyncLoader != null) {
       _controller.setAsyncLoader(widget.asyncLoader!);
       _controller.refresh();
     }
 
-    if (widget.searchConfig.caseSensitive !=
-        oldWidget.searchConfig.caseSensitive) {
+    if (widget.searchConfig.caseSensitive != oldWidget.searchConfig.caseSensitive) {
       _controller.updateCaseSensitive(widget.searchConfig.caseSensitive);
     }
-    if (widget.searchConfig.minSearchLength !=
-        oldWidget.searchConfig.minSearchLength) {
+    if (widget.searchConfig.minSearchLength != oldWidget.searchConfig.minSearchLength) {
       _controller.updateMinSearchLength(widget.searchConfig.minSearchLength);
     }
-    if (widget.searchConfig.fuzzySearchEnabled !=
-        oldWidget.searchConfig.fuzzySearchEnabled) {
-      _controller.updateFuzzySearchEnabled(
-        widget.searchConfig.fuzzySearchEnabled,
-      );
+    if (widget.searchConfig.fuzzySearchEnabled != oldWidget.searchConfig.fuzzySearchEnabled) {
+      _controller.updateFuzzySearchEnabled(widget.searchConfig.fuzzySearchEnabled);
     }
-    if (widget.searchConfig.fuzzyThreshold !=
-        oldWidget.searchConfig.fuzzyThreshold) {
+    if (widget.searchConfig.fuzzyThreshold != oldWidget.searchConfig.fuzzyThreshold) {
       _controller.updateFuzzyThreshold(widget.searchConfig.fuzzyThreshold);
     }
   }
@@ -241,11 +234,7 @@ mixin SmartSearchStateMixin<
   /// [onAttach] is called after installing the new controller but before
   /// adding the announcement listener — use it to add widget-specific
   /// listeners and reset query tracking.
-  void handleControllerSwap(
-    W oldWidget, {
-    void Function()? onDetach,
-    void Function()? onAttach,
-  }) {
+  void handleControllerSwap(W oldWidget, {void Function()? onDetach, void Function()? onAttach}) {
     if (widget.controller != oldWidget.controller) {
       // Remove from the *active* controller — oldWidget.controller is null
       // when the active controller was created internally.
@@ -273,10 +262,7 @@ mixin SmartSearchStateMixin<
         _controllerCreatedInternally = true;
         initializeData();
       }
-      assert(
-        !_controller.isDisposed,
-        'Controller must not be disposed after swap',
-      );
+      assert(!_controller.isDisposed, 'Controller must not be disposed after swap');
       assert(
         (widget.controller != null) != _controllerCreatedInternally,
         '_controllerCreatedInternally must be consistent with widget.controller',
@@ -327,36 +313,24 @@ mixin SmartSearchStateMixin<
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_isDisposed || !mounted) return;
-      SemanticsService.sendAnnouncement(
-        View.of(context),
-        message,
-        Directionality.of(context),
-      );
+      SemanticsService.sendAnnouncement(View.of(context), message, Directionality.of(context));
     });
   }
 
   /// Splits the current search query into individual terms.
   List<String> computeSearchTerms() {
-    return _controller.searchQuery
-        .split(' ')
-        .where((s) => s.isNotEmpty)
-        .toList();
+    return _controller.searchQuery.split(' ').where((s) => s.isNotEmpty).toList();
   }
 
   /// Builds a single item widget with selection and tap wrapping.
   Widget buildItem(BuildContext context, int index, List<String> searchTerms) {
     if (index >= _controller.items.length) {
-      return const DefaultLoadMoreWidget();
+      return widget.loadingMoreIndicatorBuilder.call(context);
     }
 
     final item = _controller.items[index];
 
-    Widget itemWidget = widget.itemBuilder(
-      context,
-      item,
-      index,
-      searchTerms: searchTerms,
-    );
+    Widget itemWidget = widget.itemBuilder(context, item, index, searchTerms: searchTerms);
 
     if (widget.selectionConfig != null && widget.selectionConfig!.enabled) {
       final isSelected = _controller.isSelected(item);
@@ -388,10 +362,7 @@ mixin SmartSearchStateMixin<
     }
 
     if (widget.onItemTap != null) {
-      itemWidget = GestureDetector(
-        onTap: () => widget.onItemTap!(item, index),
-        child: itemWidget,
-      );
+      itemWidget = GestureDetector(onTap: () => widget.onItemTap!(item, index), child: itemWidget);
     }
 
     return itemWidget;
@@ -401,8 +372,7 @@ mixin SmartSearchStateMixin<
   /// is not in a data-ready state, or `null` if items are available.
   Widget? buildStateWidget(BuildContext context) {
     if (_controller.isLoading && _controller.items.isEmpty) {
-      return widget.loadingStateBuilder?.call(context) ??
-          const DefaultLoadingWidget();
+      return widget.loadingStateBuilder?.call(context) ?? const DefaultLoadingWidget();
     }
 
     if (_controller.error != null) {
@@ -411,30 +381,22 @@ mixin SmartSearchStateMixin<
             _controller.error!,
             () => _controller.retry(),
           ) ??
-          DefaultErrorWidget(
-            error: _controller.error!,
-            onRetry: () => _controller.retry(),
-          );
+          DefaultErrorWidget(error: _controller.error!, onRetry: () => _controller.retry());
     }
 
     if (_controller.items.isEmpty) {
       if (_controller.hasSearched && _controller.searchQuery.isNotEmpty) {
-        return widget.emptySearchStateBuilder?.call(
-              context,
-              _controller.searchQuery,
-            ) ??
+        return widget.emptySearchStateBuilder?.call(context, _controller.searchQuery) ??
             DefaultEmptySearchWidget(searchQuery: _controller.searchQuery);
       }
-      return widget.emptyStateBuilder?.call(context) ??
-          const DefaultEmptyWidget();
+      return widget.emptyStateBuilder?.call(context) ?? const DefaultEmptyWidget();
     }
 
     return null;
   }
 
   /// Groups items using the widget's [groupBy] function.
-  ({List<Object> order, Map<Object, List<IndexedItem<T>>> map})
-  computeGroups() {
+  ({List<Object> order, Map<Object, List<IndexedItem<T>>> map}) computeGroups() {
     final items = _controller.items;
     final groupBy = widget.groupBy!;
 
@@ -482,18 +444,10 @@ class GroupHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double minExtent;
 
   /// Creates a [GroupHeaderDelegate].
-  GroupHeaderDelegate({
-    required this.child,
-    required this.maxExtent,
-    required this.minExtent,
-  });
+  GroupHeaderDelegate({required this.child, required this.maxExtent, required this.minExtent});
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return SizedBox.expand(child: child);
   }
 
