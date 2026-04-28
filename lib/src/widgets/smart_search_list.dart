@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
 import '../core/smart_search_controller.dart';
 import '../models/accessibility_configuration.dart';
 import '../models/search_configuration.dart';
@@ -99,6 +100,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     this.searchFieldBuilder,
     this.separatorBuilder,
     super.loadingStateBuilder,
+    super.loadingMoreIndicatorBuilder,
     super.errorStateBuilder,
     super.emptyStateBuilder,
     super.emptySearchStateBuilder,
@@ -139,6 +141,8 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     SearchFieldBuilder? searchFieldBuilder,
     SeparatorBuilder? separatorBuilder,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -160,8 +164,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     Object Function(T item)? groupBy,
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          items: items,
@@ -170,6 +173,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          searchFieldBuilder: searchFieldBuilder,
          separatorBuilder: separatorBuilder,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -208,12 +212,13 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
   /// [SmartSearchList.controller] with [SmartSearchController.setAsyncLoader].
   const SmartSearchList.async({
     Key? key,
-    required Future<List<T>> Function(String query, {int page, int pageSize})
-    asyncLoader,
+    required Future<List<T>> Function(String query, {int page, int pageSize}) asyncLoader,
     required ItemBuilder<T> itemBuilder,
     SearchFieldBuilder? searchFieldBuilder,
     SeparatorBuilder? separatorBuilder,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -235,8 +240,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     Object Function(T item)? groupBy,
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          asyncLoader: asyncLoader,
@@ -244,6 +248,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          searchFieldBuilder: searchFieldBuilder,
          separatorBuilder: separatorBuilder,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -287,6 +292,8 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     SearchFieldBuilder? searchFieldBuilder,
     SeparatorBuilder? separatorBuilder,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -306,8 +313,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
     Object Function(T item)? groupBy,
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          controller: controller,
@@ -315,6 +321,7 @@ class SmartSearchList<T extends Object> extends SmartSearchWidgetBase<T> {
          searchFieldBuilder: searchFieldBuilder,
          separatorBuilder: separatorBuilder,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -452,8 +459,7 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
     if (isDisposed) return;
 
     if (_scrollController.hasClients &&
-        _scrollController.position.userScrollDirection !=
-            ScrollDirection.idle) {
+        _scrollController.position.userScrollDirection != ScrollDirection.idle) {
       FocusScope.of(context).unfocus();
     }
   }
@@ -507,9 +513,7 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
       animation: controller,
       builder: (context, child) {
         return Column(
-          mainAxisSize: widget.listConfig.shrinkWrap
-              ? MainAxisSize.min
-              : MainAxisSize.max,
+          mainAxisSize: widget.listConfig.shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
           children: [
             // Search field
             if (widget.searchConfig.enabled) _buildSearchField(),
@@ -525,8 +529,7 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
               ),
 
             // Sort and filter controls
-            if (widget.sortBuilder != null || widget.filterBuilder != null)
-              _buildControls(),
+            if (widget.sortBuilder != null || widget.filterBuilder != null) _buildControls(),
 
             // Main list
             Flexible(
@@ -542,12 +545,7 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
 
   Widget _buildSearchField() {
     if (widget.searchFieldBuilder != null) {
-      return widget.searchFieldBuilder!(
-        context,
-        _searchTextController,
-        _focusNode,
-        _clearSearch,
-      );
+      return widget.searchFieldBuilder!(context, _searchTextController, _focusNode, _clearSearch);
     }
 
     return DefaultSearchField(
@@ -594,10 +592,7 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
 
     // Add pull-to-refresh if enabled
     if (widget.listConfig.pullToRefresh) {
-      listWidget = RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: listWidget,
-      );
+      listWidget = RefreshIndicator(onRefresh: _handleRefresh, child: listWidget);
     }
 
     return listWidget;
@@ -667,21 +662,12 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
       clipBehavior: widget.listConfig.clipBehavior,
       itemCount: _totalGroupedItemCount(groups.order, groups.map),
       itemBuilder: (context, flatIndex) {
-        return _groupedItemBuilder(
-          context,
-          flatIndex,
-          groups.order,
-          groups.map,
-          searchTerms,
-        );
+        return _groupedItemBuilder(context, flatIndex, groups.order, groups.map, searchTerms);
       },
     );
   }
 
-  int _totalGroupedItemCount(
-    List<Object> groupOrder,
-    Map<Object, List<IndexedItem<T>>> groupMap,
-  ) {
+  int _totalGroupedItemCount(List<Object> groupOrder, Map<Object, List<IndexedItem<T>>> groupMap) {
     int count = 0;
     for (final key in groupOrder) {
       count += 1 + groupMap[key]!.length; // 1 header + items
@@ -702,11 +688,7 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
       final groupItems = groupMap[key]!;
       if (flatIndex == current) {
         // This is a group header
-        return widget.groupHeaderBuilder?.call(
-              context,
-              key,
-              groupItems.length,
-            ) ??
+        return widget.groupHeaderBuilder?.call(context, key, groupItems.length) ??
             DefaultGroupHeader(groupValue: key, itemCount: groupItems.length);
       }
       current += 1; // header
@@ -719,6 +701,6 @@ class _SmartSearchListState<T extends Object> extends State<SmartSearchList<T>>
     }
 
     // Loading more indicator at bottom
-    return const DefaultLoadMoreWidget();
+    return widget.loadingMoreIndicatorBuilder.call(context);
   }
 }

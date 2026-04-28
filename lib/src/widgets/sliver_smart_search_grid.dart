@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../core/smart_search_controller.dart';
 import '../models/accessibility_configuration.dart';
 import '../models/grid_configuration.dart';
@@ -63,6 +64,7 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     required super.itemBuilder,
     super.controller,
     super.loadingStateBuilder,
+    super.loadingMoreIndicatorBuilder,
     super.errorStateBuilder,
     super.emptyStateBuilder,
     super.emptySearchStateBuilder,
@@ -94,6 +96,8 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     required ItemBuilder<T> itemBuilder,
     required GridConfiguration gridConfig,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -109,8 +113,7 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
     double groupHeaderExtent = 48.0,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          items: items,
@@ -118,6 +121,7 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
          itemBuilder: itemBuilder,
          gridConfig: gridConfig,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -143,11 +147,12 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
   /// [searchableFields] is not accepted.
   const SliverSmartSearchGrid.async({
     Key? key,
-    required Future<List<T>> Function(String query, {int page, int pageSize})
-    asyncLoader,
+    required Future<List<T>> Function(String query, {int page, int pageSize}) asyncLoader,
     required ItemBuilder<T> itemBuilder,
     required GridConfiguration gridConfig,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -163,14 +168,14 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
     double groupHeaderExtent = 48.0,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          asyncLoader: asyncLoader,
          itemBuilder: itemBuilder,
          gridConfig: gridConfig,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -202,6 +207,8 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     required ItemBuilder<T> itemBuilder,
     required GridConfiguration gridConfig,
     LoadingStateBuilder? loadingStateBuilder,
+    WidgetBuilder loadingMoreIndicatorBuilder =
+        SmartSearchWidgetBase.defaultLoadingMoreIndicatorBuilder,
     ErrorStateBuilder? errorStateBuilder,
     EmptyStateBuilder? emptyStateBuilder,
     EmptySearchStateBuilder? emptySearchStateBuilder,
@@ -215,14 +222,14 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
     GroupHeaderBuilder? groupHeaderBuilder,
     Comparator<Object>? groupComparator,
     double groupHeaderExtent = 48.0,
-    AccessibilityConfiguration accessibilityConfig =
-        const AccessibilityConfiguration(),
+    AccessibilityConfiguration accessibilityConfig = const AccessibilityConfiguration(),
   }) : this._(
          key: key,
          controller: controller,
          itemBuilder: itemBuilder,
          gridConfig: gridConfig,
          loadingStateBuilder: loadingStateBuilder,
+         loadingMoreIndicatorBuilder: loadingMoreIndicatorBuilder,
          errorStateBuilder: errorStateBuilder,
          emptyStateBuilder: emptyStateBuilder,
          emptySearchStateBuilder: emptySearchStateBuilder,
@@ -240,12 +247,10 @@ class SliverSmartSearchGrid<T extends Object> extends SmartSearchWidgetBase<T> {
        );
 
   @override
-  State<SliverSmartSearchGrid<T>> createState() =>
-      _SliverSmartSearchGridState<T>();
+  State<SliverSmartSearchGrid<T>> createState() => _SliverSmartSearchGridState<T>();
 }
 
-class _SliverSmartSearchGridState<T extends Object>
-    extends State<SliverSmartSearchGrid<T>>
+class _SliverSmartSearchGridState<T extends Object> extends State<SliverSmartSearchGrid<T>>
     with SmartSearchStateMixin<T, SliverSmartSearchGrid<T>> {
   /// Tracks the last query value to detect changes and fire [onSearchChanged].
   String _lastSearchQuery = '';
@@ -343,10 +348,7 @@ class _SliverSmartSearchGridState<T extends Object>
     );
 
     if (widget.gridConfig.padding != null) {
-      sliverGrid = SliverPadding(
-        padding: widget.gridConfig.padding!,
-        sliver: sliverGrid,
-      );
+      sliverGrid = SliverPadding(padding: widget.gridConfig.padding!, sliver: sliverGrid);
     }
 
     if (!controller.isLoadingMore) return sliverGrid;
@@ -354,7 +356,7 @@ class _SliverSmartSearchGridState<T extends Object>
     return SliverMainAxisGroup(
       slivers: [
         sliverGrid,
-        const SliverToBoxAdapter(child: DefaultLoadMoreWidget()),
+        SliverToBoxAdapter(child: widget.loadingMoreIndicatorBuilder.call(context)),
       ],
     );
   }
@@ -376,15 +378,8 @@ class _SliverSmartSearchGridState<T extends Object>
                 maxExtent: widget.groupHeaderExtent,
                 minExtent: widget.groupHeaderExtent,
                 child:
-                    widget.groupHeaderBuilder?.call(
-                      context,
-                      key,
-                      groupItems.length,
-                    ) ??
-                    DefaultGroupHeader(
-                      groupValue: key,
-                      itemCount: groupItems.length,
-                    ),
+                    widget.groupHeaderBuilder?.call(context, key, groupItems.length) ??
+                    DefaultGroupHeader(groupValue: key, itemCount: groupItems.length),
               ),
             ),
             _buildGroupGrid(groupItems, searchTerms),
@@ -394,7 +389,7 @@ class _SliverSmartSearchGridState<T extends Object>
     }
 
     if (controller.isLoadingMore) {
-      slivers.add(const SliverToBoxAdapter(child: DefaultLoadMoreWidget()));
+      slivers.add(SliverToBoxAdapter(child: widget.loadingMoreIndicatorBuilder.call(context)));
     }
 
     return SliverMainAxisGroup(slivers: slivers);
@@ -402,10 +397,7 @@ class _SliverSmartSearchGridState<T extends Object>
 
   /// Builds a per-group [SliverGrid], optionally wrapped in [SliverPadding].
   /// Mirrors [SmartSearchGrid._addGroupedSlivers] padding logic.
-  Widget _buildGroupGrid(
-    List<IndexedItem<T>> groupItems,
-    List<String> searchTerms,
-  ) {
+  Widget _buildGroupGrid(List<IndexedItem<T>> groupItems, List<String> searchTerms) {
     Widget gridSliver = SliverGrid(
       gridDelegate: widget.gridConfig.gridDelegate,
       delegate: SliverChildBuilderDelegate(
@@ -421,10 +413,7 @@ class _SliverSmartSearchGridState<T extends Object>
     );
 
     if (widget.gridConfig.padding != null) {
-      gridSliver = SliverPadding(
-        padding: widget.gridConfig.padding!,
-        sliver: gridSliver,
-      );
+      gridSliver = SliverPadding(padding: widget.gridConfig.padding!, sliver: gridSliver);
     }
 
     return gridSliver;
