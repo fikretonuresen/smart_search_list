@@ -193,7 +193,10 @@ mixin SmartSearchStateMixin<T extends Object, W extends SmartSearchWidgetBase<T>
       _controller.setItems(widget.items!);
     } else if (widget.asyncLoader != null) {
       _controller.setAsyncLoader(widget.asyncLoader!);
-      _controller.search('');
+      // searchImmediate (not search) so isLoading flips synchronously before
+      // the first build — otherwise emptyStateBuilder shows during the
+      // debounce window before the loader fires.
+      _controller.searchImmediate('');
     }
   }
 
